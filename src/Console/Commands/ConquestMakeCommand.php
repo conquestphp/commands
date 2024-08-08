@@ -2,6 +2,7 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
+use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputOption;
@@ -52,27 +53,6 @@ class ConquestMakeCommand extends GeneratorCommand
     {
         [$path, $method] = $this->parseName($this->getInputName());
         // Build Conquest controller
-        $controllerName = $path . 'Controller';
-        $controllerPath = app_path('Http/Controllers/' . $controllerName . '.php');
-        
-        // Get the custom stub content
-        $stubPath = base_path('stubs/controller.conquest.stub');
-        $stubContent = file_get_contents($stubPath);
-        
-        // Replace placeholders in the stub
-        $stubContent = str_replace('{{ class }}', class_basename($controllerName), $stubContent);
-        $stubContent = str_replace('{{ namespace }}', 'App\\Http\\Controllers\\' . str_replace('/', '\\', dirname($controllerName)), $stubContent);
-        
-        // Ensure the directory exists
-        if (!file_exists(dirname($controllerPath))) {
-            mkdir(dirname($controllerPath), 0755, true);
-        }
-        
-        // Write the controller file
-        file_put_contents($controllerPath, $stubContent);
-        
-        $this->info('Controller created successfully: ' . $controllerPath);
-
         // Build request
 
         // Check to build model and associatives
@@ -111,7 +91,7 @@ class ConquestMakeCommand extends GeneratorCommand
         }
 
         // Check if 'crud' or 'all' option is enabled
-        if ($this->hasOption('crud') || $this->hasOption('all')) {
+        if ($this->option('crud') || $this->option('all')) {
             return [null, $path];
         }
 
@@ -163,12 +143,12 @@ class ConquestMakeCommand extends GeneratorCommand
         $stub = $this->files->get($this->getStub());
 
         return $this->replaceNamespace($stub, $name)
-            ->replaceClass($stub, $name)
             ->replaceRequest($stub, $name)
             ->replaceInertia($stub, $name)
             ->replaceModel($stub, $name)
             ->replaceInvoke($stub, $name)
-            ->replaceResponse($stub, $name);
+            ->replaceResponse($stub, $name)
+            ->replaceClass($stub, $name);
     }
 
     /**
@@ -183,6 +163,244 @@ class ConquestMakeCommand extends GeneratorCommand
                 'What argument should be used as the generator for this conquest command?',
                 'E.g. UserEdit'
             ]
-        ]
+        ];
+    }
+
+    /**
+     * Append request to the name.
+     *
+     * @param  string  $name
+     * @return string
+     */
+    protected function getRequest($name)
+    {
+        return $name . 'Request';
+    }
+
+    /**
+     * Replace the request import to use the generated request.
+     *
+     * @param  string  $stub
+     * @param  string  $name
+     * @return static
+     */
+    protected function replaceRequest($stub, $name): static
+    {
+        $class = str_replace($this->getNamespace($name).'\\', '', $name);
+
+        str_replace(['DummyRequest', '{{ request }}', '{{request}}'], $class, $stub);
+
+        return $this;
+    }
+
+    protected function getModalByDefaultMethods()
+    {
+        return [
+            'Delete'
+        ];
+    }
+
+    protected function getPageByDefaultMethods()
+    {
+        return [
+            'Index',
+            'Show',
+            'Create',
+            'Edit',
+        ];
+    }
+
+    /**
+     * Checks whether the method renders a modal by default.
+     *
+     * @param  string  $name
+     * @param  bool  $force
+     * @return bool
+     */
+    protected function isModalMethod($name, $force = false)
+    {
+        return $force || in_array(
+            strtolower($name),
+            collect($this->getModalByDefaultMethods())
+                ->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
+    }
+
+    /**
+     * Checks whether the method renders a page by default.
+     *
+     * @param  string  $name
+     * @param  bool  $force
+     * @return bool
+     */
+    protected function isPageMethod($name, $force = false)
+    {
+        return $force || in_array(
+            strtolower($name),
+            collect($this->getPageByDefaultMethods())
+                ->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
+    }
+
+    /**
+     * Checks whether the given name is reserved.
+     *
+     * @param  string  $name
+     * @return bool
+     */
+    protected function isInertiaMethod($name)
+    {
+        return in_array(
+            strtolower($name),
+            collect(array_merge($this->getPageByDefaultMethods(), $this->getModalByDefaultMethods()))
+                ->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
+    }
+
+    /**
+     * Import Inertia if needed.
+     *
+     * @param  string  $stub
+     * @param  string  $method
+     * @return static
+     */
+    protected function replaceInertia($stub, $method): static
+    {
+        if ($this->isInertiaMethod($method)) {
+            str_replace(['{{ inertia }}', '{{inertia}}'], 'use Inertia\Inertia;', $stub);
+        } else {
+            str_replace(['{{ inertia }}', '{{inertia}}'], '', $stub);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Checks whether the given name is reserved.
+     *
+     * @return bool
+     */
+    protected function usesModel()
+    {
+        return $this->option('model');
+    }
+
+    /**
+     * Get the model name.
+     *
+     * @param  string  $name
+     * @return string
+     */
+    protected function getModel($name)
+    {
+        // Return the model path
+        return 'App\\Models\\' . $this->getNameWithoutNamespace($name);
+    }
+
+    protected function getNameWithoutNamespace($name)
+    {
+        return str_replace($this->getNamespace($name).'\\', '', $name);
+    }
+
+    /**
+     * Import the model if needed.
+     *
+     * @param  string  $stub
+     * @param  string  $method
+     * @return static
+     */
+    protected function replaceModel($stub, $name): static
+    {
+        if ($this->usesModel()) {
+            str_replace(['{{ model }}', '{{model}}'], 'use ' . $this->getModel($name) . ';', $stub);
+        } else {
+            str_replace(['{{ model }}', '{{model}}'], '', $stub);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Generate the invoke method signature for the controller.
+     *
+     * @param  string  $stub
+     * @param  string  $method
+     * @return static
+     */
+    protected function replaceInvoke($stub, $name): static
+    {
+        $request = $this->getNameWithoutNamespace($this->getRequest($name));
+
+        if ($this->usesModel()) {
+            $model = $this->getNameWithoutNamespace($name);
+            str_replace(['{{ invoke }}', '{{invoke}}'], 'public function __invoke(' . $request . ' $request, ' . $model . ' ' . Str::camel($model) . ')', $stub);
+        } else {
+            str_replace(['{{ invoke }}', '{{invoke}}'], 'public function __invoke(' . $request . ' $request)', $stub);
+        }
+
+        return $this;
+    }
+
+    protected function getResource($name)
+    {
+        return $this->getNameWithoutNamespace($name);
+    }
+
+    /**
+     * Generate the response for the controller.
+     *
+     * @param  string  $stub
+     * @param  string  $method
+     * @return static
+     */
+    protected function replaceResponse($stub, $name): static
+    {
+        $model = $this->getNameWithoutNamespace($name);
+        $props = $this->usesModel() ? ''.Str::camel($model) .' => $' . Str::camel($model) : '';
+        if ($this->isPageMethod($name)) {
+            str_replace(['{{ response }}', '{{response}}'], "return Inertia::render('" . $this->getResource($name) . "', [\n\t'" . Str::camel($model) . "' => $" . Str::camel($model) . ",\n]);",  $stub);
+        } else if ($this->isModalMethod($name)) {
+            str_replace(['{{ response }}', '{{response}}'], "return Inertia::modal('" . $this->getResource($name) . "', [\n\t'" . Str::camel($model) . "' => $" . Str::camel($model) . ",\n])->baseRoute('" . config('assemble.base_route') . "');",  $stub);
+        } else {
+            str_replace(['{{ response }}', '{{response}}'], 'return back();',  $stub);
+        }
+        return $this;
+    }
+
+
+    protected function createConquest($type, $name, bool $modal = false, bool $page = false)
+    {
+        // Create out the request first
+        $requestName = $this->getRequest($name);
+        $this->call('make:request', [
+            'name' => $requestName,
+            '--force' => $this->option('force'),
+        ]);        
+
+
+        $controllerName = $path . 'Controller';
+        $controllerPath = app_path('Http/Controllers/' . $controllerName . '.php');
+        
+        // Get the custom stub content
+        $stubPath = base_path('stubs/controller.conquest.stub');
+        $stubContent = file_get_contents($stubPath);
+        
+        // Replace placeholders in the stub
+        $stubContent = str_replace('{{ class }}', class_basename($controllerName), $stubContent);
+        $stubContent = str_replace('{{ namespace }}', 'App\\Http\\Controllers\\' . str_replace('/', '\\', dirname($controllerName)), $stubContent);
+        
+        // Ensure the directory exists
+        if (!file_exists(dirname($controllerPath))) {
+            mkdir(dirname($controllerPath), 0755, true);
+        }
+        
+        // Write the controller file
+        file_put_contents($controllerPath, $stubContent);
+        
+        $this->info('Controller created successfully: ' . $controllerPath);
+
     }
 }

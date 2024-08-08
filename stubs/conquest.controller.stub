@@ -4,8 +4,8 @@ declare(strict=1);
 
 namespace {{ namespace }};
 
-{{ imports }}
-
+{{ model }}
+{{ inertia }}
 use {{ request }};
 
 class {{ class }}

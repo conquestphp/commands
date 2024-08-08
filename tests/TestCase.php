@@ -12,6 +12,11 @@ class TestCase extends Orchestra
     protected function setUp(): void
     {
         parent::setUp();
+        
+        $this->artisan('vendor:publish', [
+            '--provider' => AssembleServiceProvider::class,
+            '--tag' => 'assemble-stubs',
+        ])->run();
     }
 
     protected function getPackageProviders($app)

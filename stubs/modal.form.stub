@@ -1,0 +1,54 @@
+<template>
+    <Head title="" />
+    <Modal>
+        <ModalBody>
+            <ModalHeader>
+                <!-- Title -->
+            </ModalHeader>
+            <Form @submit.prevent="onSubmit">
+                <ModalContent>
+                    <!-- ... -->
+                </ModalContent>
+                <ModalFooter>
+                    <Button variant="ghost" @click="close">
+                        Cancel
+                    </Button>
+                    <Button variant="primary" type="submit">
+                        Create
+                    </Button>
+                </ModalFooter>
+            </Form>
+        </ModalBody>
+    </Modal>
+</template>
+
+<script setup>
+import { Head, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { useModal } from 'momentum-modal'
+import { Modal, ModalBody ModalHeader, ModalContent, ModalFooter } from '@/Components/Modal';
+import { Button } from '@/Components/Button
+import { Text } from '@/Components/Typography'
+import { Field, Form } from '@/Components/Form
+
+const { close } = useModal()
+
+const props = defineProps({
+    
+})
+
+const form = useForm({
+    
+})
+
+const onSubmit = () => {
+    form.submit(route(''), {
+        onSuccess: () => {
+            close()
+        },
+        onError: () => {
+            // ...
+        }
+    })
+}
+</script>

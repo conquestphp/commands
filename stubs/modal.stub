@@ -1,0 +1,34 @@
+<template>
+    <Head title="" />
+    <Modal>
+        <ModalBody>
+            <ModalHeader>
+                <!-- Title -->
+            </ModalHeader>
+            <ModalContent>
+                <!-- ... -->
+            </ModalContent>
+            <ModalFooter>
+                <SecondaryButton @click="close">
+                    Close
+                </SecondaryButton>
+            </ModalFooter>                
+        </ModalBody>
+    </Modal>
+</template>
+
+<script setup>
+import { Head } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { useModal } from 'momentum-modal'
+import { Modal, ModalBody ModalHeader, ModalContent, ModalFooter } from '@/Components/Modal';
+import { PrimaryButton, SecondaryButton } from '@/Components/Button
+import { Text } from '@/Components/Utility'
+
+const { close } = useModal()
+
+const props = defineProps({
+    // name: Type
+})
+
+</script>

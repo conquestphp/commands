@@ -2,9 +2,9 @@
 
 namespace Conquest\Assemble;
 
+use Conquest\Assemble\Console\Commands\ModalMakeCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Conquest\Assemble\Commands\AssembleCommand;
 
 class AssembleServiceProvider extends PackageServiceProvider
 {
@@ -18,8 +18,8 @@ class AssembleServiceProvider extends PackageServiceProvider
         $package
             ->name('assemble')
             ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_assemble_table')
-            ->hasCommand(AssembleCommand::class);
+            ->hasCommands(
+                ModalMakeCommand::class
+            );
     }
 }

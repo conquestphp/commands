@@ -6,7 +6,7 @@ return [
     'paths' => [
         'page' => resource_path('js/Pages'),
         'modal' => resource_path('js/Modals'),
-        'lib' => resource_path('js/Lib'),
         'component' => resource_path('js/Components'),
-    ]
+    ],
+    'base_route' => 'dashboard',
 ];

@@ -1,0 +1,22 @@
+<template>
+    <Head title="" />
+
+    <PageLayout :links name="">
+        
+    </PageLayout>
+</template>
+
+<script setup>
+import { useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { AppLayout, PageLayout, Head } from '@/Layouts';
+import { Text } from '@/UI/Typography'
+import { Separator, VisuallyHidden } from '@/UI/Utility'
+
+defineOptions({ layout: AppLayout })
+
+const props = defineProps({
+    links: { type: Array, required: true }
+})
+
+</script>

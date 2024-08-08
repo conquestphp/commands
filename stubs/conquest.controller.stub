@@ -1,0 +1,17 @@
+<?php
+
+declare(strict=1);
+
+namespace {{ namespace }};
+
+{{ imports }}
+
+use {{ request }};
+
+class {{ class }}
+{
+    {{ invoke }}
+    {
+        return {{ response }};
+    }
+}

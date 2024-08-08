@@ -8,6 +8,7 @@ use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
+use Illuminate\Console\Concerns\CreatesMatchingTest;
 
 #[AsCommand(name: 'make:conquest')]
 class ConquestMakeCommand extends GeneratorCommand
@@ -21,10 +22,6 @@ class ConquestMakeCommand extends GeneratorCommand
         'Update',
         'Delete',
         'Destroy'
-    ];
-
-    public const PURGE = [
-        'Controller',
     ];
 
     /**
@@ -51,17 +48,60 @@ class ConquestMakeCommand extends GeneratorCommand
 
     public function handle()
     {
-        [$path, $method] = $this->parseName($this->getInputName());
-        // Build Conquest controller
-        // Build request
+        if ($this->isReservedName($this->getNameInput())) {
+            $this->components->error('The name "'.$this->getNameInput().'" is reserved by PHP.');
+            return false;
+        }
 
-        // Check to build model and associatives
+        if ($this->option('all')) {
+            $this->input->setOption('model', true);
+            $this->input->setOption('factory', true);
+            $this->input->setOption('seed', true);
+            $this->input->setOption('migration', true);
+            $this->input->setOption('policy', true);
+            $this->input->setOption('resource', true);
+            $this->input->setOption('crud', true);
+            $this->input->setOption('web', true);
+        }
 
-        // Check to bui
+        if ($this->option('model')) {
+            $this->call('make:model', [
+                'name' => $this->getModel($this->getInputName()),
+                '--force' => $this->option('force'),
+                '--factory' => $this->option('factory'),
+                '--seed' => $this->option('seed'),
+                '--migration' => $this->option('migration'),
+                '--policy' => $this->option('policy'),
+            ]);
+        }
+
+        [$name, $method] = $this->parseName($this->getInputName());
+        
+        if ($this->option('resource')) {
+            $this->call('make:resource', [
+                'name' => $name,
+                '--force' => $this->option('force'),
+            ]);
+        }
+
+        if ($this->option('crud')) {
+            foreach(self::METHODS as $method) {
+                $this->createConquest($name, $method);
+            }
+        } else {
+            $this->createConquest($name, $method);
+        }
+
+        if ($this->option('web')) {
+            // If web is applied, use the generated controllers and add it into web.php
+            // Or the specified argument value inside routes/
+
+            $this->createRoutes($name, $method);
+        }
     }
 
     /**
-     * @return array{?string, string}
+     * @return array{string, ?string}
      */
     public function parseName(string $name): array
     {
@@ -73,32 +113,18 @@ class ConquestMakeCommand extends GeneratorCommand
         $words = preg_split('/(?=[A-Z])/', $fileName, -1, PREG_SPLIT_NO_EMPTY);
         $finalWord = array_pop($words);
 
-        // Handle 'Controller' case
-        if (in_array($finalWord, self::PURGE)) {
-            $finalWord = array_pop($words);
-            if (empty($words)) {
-                throw new \InvalidArgumentException("Invalid name: '{$name}'. Cannot end with 'Controller' if no other words are present.");
-            }
-        }
-
         // Reconstruct the path including the final word
-        $path = implode('/', $system);
-        $path .= '/' . implode('', $words);
+        $name = implode('/', $system);
+        $name .= '/' . implode('', $words);
 
-        // Add back the final word to the path
+        // Add back the final word to the name if it is not a method
         if (!in_array($finalWord, self::METHODS)) {
-            $path .= $finalWord;
+            $name .= $finalWord;
         }
 
-        // Check if 'crud' or 'all' option is enabled
-        if ($this->option('crud') || $this->option('all')) {
-            return [null, $path];
-        }
-
-        // Check if the final word is in METHODS
-        $type = in_array($finalWord, self::METHODS) ? $finalWord : null;
-        
-        return [$type, $path];
+        // Check if the final word is in methods, remove it as give it as the type
+        $method = in_array($finalWord, self::METHODS) ? $finalWord : null;
+        return [$name, $method];
     }
 
     /**
@@ -134,19 +160,20 @@ class ConquestMakeCommand extends GeneratorCommand
      * Build the class with the given name.
      *
      * @param  string  $name
+     * @param  ?string  $method
      * @return string
      *
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    protected function buildClass($name)
+    protected function buildConquestClass(string $name, ?string $method)
     {
         $stub = $this->files->get($this->getStub());
 
         return $this->replaceNamespace($stub, $name)
-            ->replaceRequest($stub, $name)
+            ->replaceRequest($stub, $this->getAppendedName($name, $method))
             ->replaceInertia($stub, $name)
             ->replaceModel($stub, $name)
-            ->replaceInvoke($stub, $name)
+            ->replaceInvoke($stub, $this->getAppendedName($name, $method))
             ->replaceResponse($stub, $name)
             ->replaceClass($stub, $name);
     }
@@ -170,11 +197,12 @@ class ConquestMakeCommand extends GeneratorCommand
      * Append request to the name.
      *
      * @param  string  $name
+     * @param  ?string  $method
      * @return string
      */
-    protected function getRequest($name)
+    protected function getRequest(string $name)
     {
-        return $name . 'Request';
+        return 'App\Http\Requests\\' . $this->getNameWithoutNamespace($name.'Request');
     }
 
     /**
@@ -327,12 +355,13 @@ class ConquestMakeCommand extends GeneratorCommand
      * Generate the invoke method signature for the controller.
      *
      * @param  string  $stub
-     * @param  string  $method
+     * @param  string  $name
+     * @param  ?string  $method
      * @return static
      */
-    protected function replaceInvoke($stub, $name): static
+    protected function replaceInvoke(string $stub, string $name): static
     {
-        $request = $this->getNameWithoutNamespace($this->getRequest($name));
+        $request = $this->getNameWithoutNamespace($this->getNameWithoutNamespace($name . 'Request'));
 
         if ($this->usesModel()) {
             $model = $this->getNameWithoutNamespace($name);
@@ -344,10 +373,19 @@ class ConquestMakeCommand extends GeneratorCommand
         return $this;
     }
 
-    protected function getResource($name)
+    /**
+     * Get the complete name for the controller.
+     *
+     * @param  string  $name
+     * @param  ?string  $method
+     * @return string
+     */
+    protected function getAppendedName(string $name, ?string $method): string
     {
-        return $this->getNameWithoutNamespace($name);
+        return $name . ($method ? $method : '');
     }
+
+
 
     /**
      * Generate the response for the controller.
@@ -359,11 +397,11 @@ class ConquestMakeCommand extends GeneratorCommand
     protected function replaceResponse($stub, $name): static
     {
         $model = $this->getNameWithoutNamespace($name);
-        $props = $this->usesModel() ? ''.Str::camel($model) .' => $' . Str::camel($model) : '';
+        // $props = $this->usesModel() ? ''.Str::camel($model) .' => $' . Str::camel($model) : '';
         if ($this->isPageMethod($name)) {
-            str_replace(['{{ response }}', '{{response}}'], "return Inertia::render('" . $this->getResource($name) . "', [\n\t'" . Str::camel($model) . "' => $" . Str::camel($model) . ",\n]);",  $stub);
+            str_replace(['{{ response }}', '{{response}}'], "return Inertia::render('" . $model . "', [\n\t'" . Str::camel($model) . "' => $" . Str::camel($model) . ",\n]);",  $stub);
         } else if ($this->isModalMethod($name)) {
-            str_replace(['{{ response }}', '{{response}}'], "return Inertia::modal('" . $this->getResource($name) . "', [\n\t'" . Str::camel($model) . "' => $" . Str::camel($model) . ",\n])->baseRoute('" . config('assemble.base_route') . "');",  $stub);
+            str_replace(['{{ response }}', '{{response}}'], "return Inertia::modal('" . $model . "', [\n\t'" . Str::camel($model) . "' => $" . Str::camel($model) . ",\n])->baseRoute('" . config('assemble.base_route') . "');",  $stub);
         } else {
             str_replace(['{{ response }}', '{{response}}'], 'return back();',  $stub);
         }
@@ -371,36 +409,71 @@ class ConquestMakeCommand extends GeneratorCommand
     }
 
 
-    protected function createConquest($type, $name, bool $modal = false, bool $page = false)
+    /**
+     * Create a Conquest controller and request pair, and any Javascript resources.
+     * 
+     * @param  string  $name
+     * @param  ?string  $method
+     */
+    protected function createConquest(string $name, ?string $method)
     {
         // Create out the request first
-        $requestName = $this->getRequest($name);
+
+        $requestName = $this->getRequest($name, $method);
         $this->call('make:request', [
             'name' => $requestName,
             '--force' => $this->option('force'),
-        ]);        
+        ]);
 
+        // Create the controller using custom stub
 
-        $controllerName = $path . 'Controller';
-        $controllerPath = app_path('Http/Controllers/' . $controllerName . '.php');
-        
-        // Get the custom stub content
-        $stubPath = base_path('stubs/controller.conquest.stub');
-        $stubContent = file_get_contents($stubPath);
-        
-        // Replace placeholders in the stub
-        $stubContent = str_replace('{{ class }}', class_basename($controllerName), $stubContent);
-        $stubContent = str_replace('{{ namespace }}', 'App\\Http\\Controllers\\' . str_replace('/', '\\', dirname($controllerName)), $stubContent);
-        
-        // Ensure the directory exists
-        if (!file_exists(dirname($controllerPath))) {
-            mkdir(dirname($controllerPath), 0755, true);
+        $name = $this->qualifyClass($this->getNameInput());
+
+        $path = $this->getPath($name);
+
+        if ((! $this->hasOption('force') ||
+             ! $this->option('force')) &&
+             $this->alreadyExists($this->getNameInput())) {
+            $this->components->error('Conquest controller already exists.');
+
+            return false;
         }
-        
-        // Write the controller file
-        file_put_contents($controllerPath, $stubContent);
-        
-        $this->info('Controller created successfully: ' . $controllerPath);
 
+        $this->makeDirectory($path);
+
+        $this->files->put($path, $this->sortImports($this->buildConquestClass($name, $method)));
+
+        if (in_array(CreatesMatchingTest::class, class_uses_recursive($this))) {
+            $this->handleTestCreation($path);
+        }
+
+        if (windows_os()) {
+            $path = str_replace('/', '\\', $path);
+        }
+
+        $this->components->info(sprintf('Conquest controller [%s] created successfully.', $path));
+
+        // Create the page or modal, or none
+        if ($this->option('page')) {
+            $this->call('make:page', [
+                'name' => $this->getAppendedName($name, $method),
+                '--force' => $this->option('force'),
+            ]);
+        } else if ($this->option('modal')) {
+            $this->call('make:modal', [
+                'name' => $this->getAppendedName($name, $method),
+                '--force' => $this->option('force'),
+            ]);
+        } else if ($this->isPageMethod($name)) {
+            $this->call('make:page', [
+                'name' => $this->getAppendedName($name, $method),
+                '--force' => $this->option('force'),
+            ]);
+        } else if ($this->isModalMethod($name)) {
+            $this->call('make:modal', [
+                'name' => $this->getAppendedName($name, $method),
+                '--force' => $this->option('force'),
+            ]);
+        }
     }
 }

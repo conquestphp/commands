@@ -1,120 +1,170 @@
 <?php
 
-// namespace Conquest\Assemble\Console\Commands;
+namespace Conquest\Assemble\Console\Commands;
 
-// use Illuminate\Console\Command;
-// use Illuminate\Support\Facades\Artisan;
+use Illuminate\Console\Command;
+use Symfony\Component\Console\Input\InputOption;
 
-// class EndpointMakeCommand extends Command
-// {
-//     /**
-//      * The name and signature of the console command.
-//      *
-//      * @var string
-//      */
-//     protected $signature = 'make:conquest {name} {--m|modal} {--p|page} {--f|form}';
+class ConquestMakeCommand extends Command
+{
+    public const METHODS = [
+        'Index',
+        'Show',
+        'Create',
+        'Store',
+        'Edit',
+        'Update',
+        'Delete',
+        'Destroy'
+    ];
 
-//     /**
-//      * The console command description.
-//      *
-//      * @var string
-//      */
-//     protected $description = 'Make a single action controller and request pair';
+    public const PURGE = [
+        'Controller',
+    ];
 
-//     /**
-//      * Execute the console command.
-//      */
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'make:conquest {name}';
 
-//     protected function getInputName()
-//     {
-//         return $this->argument('name');
-//     }
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Generate endpoints using opinionated names';
 
-//     public function handle()
-//     {
-//         $rawPath = explode('/', $this->getInputName());
-//         $end = $this->removeType(array_pop($rawPath));
-//         $path = implode('/', $rawPath);
+    /**
+     * Retrieve the name to use.
+     */
+    protected function getInputName()
+    {
+        return $this->argument('name');
+    }
 
-//         $controller = $this->buildPath($path, $end.'Controller');
-//         $controllerPath = app_path("Http/Controllers/$controller.php");
-//         $request = $this->buildPath($path, $end.'Request');
-//         $vue = $this->buildPath($path, $end);
+    public function handle()
+    {
+        [$path, $method] = $this->parseName($this->getInputName());
+        // Build Conquest controller
+
+        // Build request
+
+        // Check to build model and associatives
+
+        // Check to bui
+    }
+
+    /**
+     * @return array{string, string}
+     */
+    public function parseName(string $name): array
+    {
+        // Split about the final /
+        $system = explode('/', $name);
+        // If the last element in array is in PURGE, remove it
+        $fileName = array_pop($system);
+
+        // Split camel case
+        $final = preg_split('/(?=[A-Z])/', $fileName, -1, PREG_SPLIT_NO_EMPTY);
+        dd($final);
+
+        // Check if final name is a method -> controller build
+        // or a
+        return [
+            '',
+            ''
+        ];
+
+    }
+
+    /**
+     * Always executed
+     */
+    protected function handleController()
+    {
         
-//         $this->call('make:controller', [
-//             'name' => $controller,
-//             '--invokable' => true,
-//         ]);
 
+    }
 
-//         $this->call('make:request', [
-//             'name' => $request,
-//         ]); 
+    /**
+     * Always executed
+     */
+    protected function handleRequest()
+    {
 
-//         // Update request in controller to use namespace 
-//         $this->replaceInFile(
-//             'use Illuminate\Http\Request;',
-//             'use '.self::REQUEST_NAMESPACE.str_replace('/', '\\', $request).';',
-//             $controllerPath
-//         );
+    }
 
-//         $this->replaceInFile(
-//             'Request $request',
-//             $end."Request \$request",
-//             $controllerPath
-//         );
+    /**
+     * Requires model flag and value
+     */
+    protected function handleModel()
+    {
 
-//         if ($this->option('modal')) {
-//             $this->call('make:modal', [
-//                 'name' => $this->buildPath($path, $end),
-//                 '-f' => $this->option('form')
-//             ]);
+    }
 
-//             $this->replaceInFile(
-//                 '//',
-//                 "return Inertia::modal('".$vue."')\n\t\t\t->with([\n\t\t\t\t\n\t\t\t])->baseRoute('".self::MODAL_BASEROUTE."');",
-//                 $controllerPath
-//             );
-//         }
-//         else if ($this->option('page')) {
-//             $this->call('make:page', [
-//                 'name' => $this->buildPath($path, $end),
-//                 '-f' => $this->option('form')
-//             ]);
+    /**
+     * Requires flag and model
+     */
+    protected function handlePolicy()
+    {
 
-//             $this->replaceInFile(
-//                 '//',
-//                 "return Inertia::render('".$vue."', [\n\t\t\t\n\t\t]);",
-//                 $controllerPath
-//             );
-//         }
+    }
 
-//         if ($this->option('page') || $this->option('modal')) {
-//             $this->replaceInFile(
-//                 'use App\Http\Controllers\Controller;',
-//                 'use App\Http\Controllers\Controller;'.PHP_EOL.'use Inertia\Inertia;',
-//                 $controllerPath
-//             );
-//         }
-//     }
+    /**
+     * Requires flag and model
+     */
+    protected function handleMigration()
+    {
 
-//     protected function replaceInFile($search, $replace, $path)
-//     {
-//         file_put_contents($path, str_replace($search, $replace, file_get_contents($path)));
-//     }
+    }
 
-//     protected function buildPath(string $path, string $file)
-//     {
-//         if ($path === '') return $file;
-//         return $path . '/' . $file;
-//     }
+    /**
+     * Requires flag
+     */
+    protected function handleSeeder()
+    {
 
-//     protected function removeType(string $name)
-//     {
-//         $remove = ['Controller', 'Request'];
-//         foreach ($remove as $r) {
-//             $name = str_replace($r, '', $name);
-//         }
-//         return $name;
-//     }
-// }
+    }
+
+    protected function handleFactory()
+    {
+
+    }
+
+    protected function handleResource()
+    {
+        
+    }
+
+    protected function handleCrud()
+    {
+
+    }
+
+    protected function handleRoute()
+    {
+        // app('routes')
+
+    }
+
+    protected function getOptions()
+    {
+        return [
+            ['force', null, InputOption::VALUE_NONE, 'Overwrite existing files with the ones to be created'],
+            ['modal', 'm', InputOption::VALUE_NONE, 'Generate a modal'],
+            ['page', 'P', InputOption::VALUE_NONE, 'Generate a page'],
+            ['form', 'F', InputOption::VALUE_NONE, 'Generate the page or modal as a form'],
+            ['model', 'o', InputOption::VALUE_NONE, 'Generate a model'],
+            ['policy', 'p', InputOption::VALUE_NONE, 'Generate a policy'],
+            ['migration', 'g', InputOption::VALUE_NONE, 'Generate a migration'],
+            ['seeder', 's', InputOption::VALUE_NONE, 'Generate a seeder'],
+            ['factory', 'f', InputOption::VALUE_NONE, 'Generate a factory'],
+            ['resource', 'r', InputOption::VALUE_NONE, 'Generate a resource'],
+            ['crud', 'c', InputOption::VALUE_NONE, 'Generate 8 endpoints for CRUD operations'],
+            ['web', 'w', InputOption::VALUE_NONE, 'Use the namespace to append the created endpoint to the provided file or web.php'],
+            ['all', 'a', InputOption::VALUE_NONE, 'Generate all options'],
+        ];
+    }
+}

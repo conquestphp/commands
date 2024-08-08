@@ -70,9 +70,9 @@ If you do include options, your name argument must contain one of the 8 keywords
 The naming convention uses 8 keywords to generate out different files.
 - `Index`: Generates a page
 - `Show`: Generates a page by default, --modal flag will generate a modal
-- `Create`: Generates a page by default, --modal flag will generate a modal
+- `Create`: Generates a form page by default, --modal flag will generate a form modal
 - `Store`: No page
-- `Edit`: Generates a page by default, --modal flag will generate a modal
+- `Edit`: Generates a form page by default, --modal flag will generate a form modal
 - `Update`: No page
 - `Delete`: Generates a modal by default, --page flag will generate a page
 - `Destroy`: No page

@@ -2,24 +2,53 @@
 
 namespace Conquest\Assemble;
 
+use Conquest\Assemble\Console\Commands\ComponentMakeCommand;
+use Conquest\Assemble\Console\Commands\ConquestMakeCommand;
 use Conquest\Assemble\Console\Commands\ModalMakeCommand;
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Conquest\Assemble\Console\Commands\PageMakeCommand;
+use Illuminate\Support\ServiceProvider;
 
-class AssembleServiceProvider extends PackageServiceProvider
+class AssembleServiceProvider extends ServiceProvider
 {
-    public function configurePackage(Package $package): void
+    /**
+     * Register services.
+     */
+    public function register(): void
     {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
-        $package
-            ->name('assemble')
-            ->hasConfigFile()
-            ->hasCommands(
-                ModalMakeCommand::class
-            );
+        $this->mergeConfigFrom(__DIR__.'/../config/assemble.php', 'assemble');
+    }
+
+    /**
+     * Bootstrap services.
+     */
+    public function boot(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ConquestMakeCommand::class,
+                PageMakeCommand::class,
+                ModalMakeCommand::class,
+                ComponentMakeCommand::class
+            ]);
+        }
+
+        $this->publishes([
+            __DIR__.'/../stubs' => base_path('stubs'),
+        ], 'conquest-stubs');
+
+        $this->publishes([
+            __DIR__.'/../config/assemble.php' => config_path('assemble.php'),
+        ], 'conquest-config');
+
+    }
+
+    public function provides()
+    {
+        return [
+            ConquestMakeCommand::class,
+            PageMakeCommand::class,
+            ModalMakeCommand::class,
+            ComponentMakeCommand::class
+        ];
     }
 }

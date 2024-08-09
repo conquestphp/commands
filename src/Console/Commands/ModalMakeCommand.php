@@ -3,14 +3,15 @@
 namespace Conquest\Assemble\Console\Commands;
 
 use Illuminate\Support\Str;
-use Illuminate\Console\GeneratorCommand;
+use function Laravel\Prompts\multiselect;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Attribute\AsCommand;
+
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use function Laravel\Prompts\multiselect;
-
-class ModalMakeCommand extends GeneratorCommand
+#[AsCommand(name: 'make:conquest')]
+class ModalMakeCommand extends ResourceGeneratorCommand
 {
     protected $name = 'make:modal';
 
@@ -27,28 +28,9 @@ class ModalMakeCommand extends GeneratorCommand
         return $this->resolveStubPath('/stubs/conquest.modal.stub');
     }
 
-    protected function getPath($name)
+    protected function rootNamespace()
     {
-        $name = Str::replaceFirst($this->rootNamespace(), '', $name);
-
-        return resource_path().'/'.str_replace('\\', '/', $name).'.'.config('assemble.extension');
-    }
-
-    protected function resolveStubPath($stub)
-    {
-        return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
-            ? $customPath
-            : __DIR__.'/../..'.$stub;
-    }
-
-    protected function getDefaultNamespace($rootNamespace)
-    {
-        return $rootNamespace.config('assemble.paths.modal');
-    }
-
-    protected function qualifyClass($name)
-    {
-        return parent::qualifyClass($name);
+        return config('assemble.paths.modals', 'js/Modals');
     }
 
     protected function getOptions()

@@ -2,17 +2,15 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Support\Str;
-use Illuminate\Console\GeneratorCommand;
+use function Laravel\Prompts\multiselect;
 use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use function Laravel\Prompts\multiselect;
-
-
-class PageMakeCommand extends GeneratorCommand
+#[AsCommand(name: 'make:page')]
+class PageMakeCommand extends ResourceGeneratorCommand
 {
     use ResolvesStubPath;
 
@@ -31,21 +29,9 @@ class PageMakeCommand extends GeneratorCommand
         return $this->resolveStubPath('/stubs/conquest.page.stub');
     }
 
-    protected function getPath($name)
+    protected function rootNamespace()
     {
-        $name = Str::replaceFirst($this->rootNamespace(), '', $name);
-
-        return resource_path().'/'.str_replace('\\', '/', $name).'.'.config('assemble.extension');
-    }
-
-    protected function getDefaultNamespace($rootNamespace)
-    {
-        return $rootNamespace.config('assemble.paths.page');
-    }
-
-    protected function qualifyClass($name)
-    {
-        return parent::qualifyClass($name);
+        return config('assemble.paths.page', 'js/Pages');
     }
 
     protected function getOptions()

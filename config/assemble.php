@@ -4,9 +4,9 @@
 return [
     'extension' => 'vue',
     'paths' => [
-        'page' => resource_path('js/Pages'),
-        'modal' => resource_path('js/Modals'),
-        'component' => resource_path('js/Components'),
+        'page' => 'js/Pages',
+        'modal' => 'js/Modals',
+        'component' => 'js/Components',
     ],
     'base_route' => 'dashboard',
 ];

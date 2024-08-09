@@ -2,13 +2,16 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Console\GeneratorCommand;
-use Illuminate\Support\Str;
+use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Attribute\AsCommand;
 
-class ComponentMakeCommand extends GeneratorCommand
+#[AsCommand(name: 'make:js-component')]
+class ComponentMakeCommand extends ResourceGeneratorCommand
 {
-    protected $name = 'make:component';
+    use ResolvesStubPath;
+
+    protected $name = 'make:js-component';
 
     protected $description = 'Create a new component';
 
@@ -19,34 +22,15 @@ class ComponentMakeCommand extends GeneratorCommand
         return $this->resolveStubPath('/stubs/conquest.component.stub');
     }
 
-    protected function getPath($name)
+    protected function rootNamespace()
     {
-        $name = Str::replaceFirst($this->rootNamespace(), '', $name);
-
-        return resource_path().'/'.str_replace('\\', '/', $name).'.'.config('assemble.extension');
-    }
-
-    protected function resolveStubPath($stub)
-    {
-        return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
-            ? $customPath
-            : __DIR__.'/../..'.$stub;
-    }
-
-    protected function getDefaultNamespace($rootNamespace)
-    {
-        return $rootNamespace.config('assemble.paths.component');
-    }
-
-    protected function qualifyClass($name)
-    {
-        return parent::qualifyClass($name);
+        return config('assemble.paths.component', 'js/Components');
     }
 
     protected function getOptions()
     {
         return [
-            ['force', null, InputOption::VALUE_NONE, 'Overwrite the component even if the component already exists'],
+            ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the component even if the component already exists'],
         ];
     }
 }

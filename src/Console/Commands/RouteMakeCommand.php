@@ -62,6 +62,11 @@ class RouteMakeCommand extends Command
         ];
     }
 
+    /**
+     * Get the model input.
+     * 
+     * @return string|null
+     */
     protected function getModelInput()
     {
         if ($model = $this->option('model')) {
@@ -127,43 +132,54 @@ class RouteMakeCommand extends Command
      */
     protected function route_path($file)
     {
-        return base_path('routes/' . $file . '.php');
+        return $this->laravel->basePath('routes/' . $file . '.php');
     }
 
     protected function resolveControllerNamespace($controller)
     {
-        return 'App\\Http\\Controllers\\' . $controller;
+        return 'App/Http/Controllers/' . $controller;
     }
 
     /**
-     * Alphabetically sorts the imports for the file.
+     * Groups and sorts the imports at the top of the file and routes at the bottom.
      *
-     * @param  string  $stub
+     * @param  string  $content
      * @return string
      */
-    protected function sortImports($stub)
+    protected function organiseFileContent($content)
     {
-        if (preg_match('/(?P<imports>(?:^use [^;{]+;$\n?)+)/m', $stub, $match)) {
-            $imports = explode("\n", trim($match['imports']));
+        // Extract and sort imports
+        preg_match_all('/^use [^;]+;$/m', $content, $importMatches);
+        $imports = $importMatches[0];
+        sort($imports);
 
-            sort($imports);
+        // Extract routes
+        preg_match_all('/^Route::.*$/m', $content, $routeMatches);
+        $routes = $routeMatches[0];
 
-            return str_replace(trim($match['imports']), implode("\n", $imports), $stub);
-        }
+        // Remove existing imports and routes from content
+        $content = preg_replace('/^use [^;]+;$/m', '', $content);
+        $content = preg_replace('/^Route::.*$/m', '', $content);
 
-        return $stub;
+        // Remove extra newlines and <?php tags
+        $content = preg_replace('/^\s*<\?php\s*$/m', '', $content);
+        $content = preg_replace('/^\s*$/m', '', $content);
+
+        // Reconstruct file content
+        $newContent = "<?php\n\n" . implode("\n", $imports) . "\n\n" . trim($content) . "\n" . implode("\n", $routes);
+
+        return trim($newContent);
     }
 
 
     protected function getRouteContent($controller)
     {
-        $httpMethod = $this->getHttpMethod($this->getMethodName($controller));
-
-        // Generate the route path
-        $routePath = $this->getRoutePath($controller);
-        $routeName = $this->getRouteName($controller);
-
-        return sprintf("\nRoute::%s('/%s', %s::class)->name(%s);\n", $httpMethod, $routePath, $controller, $routeName);
+        return sprintf("\nRoute::%s('/%s', %s::class)->name('%s');\n", 
+            $this->getHttpMethod($this->getMethodName($controller)), 
+            $this->getRoutePath($controller), 
+            last(explode('/', $controller)), 
+            $this->getRouteName($controller)
+        );
     }
 
     protected function getRoutePath($controller)
@@ -204,24 +220,21 @@ class RouteMakeCommand extends Command
         $controller = $this->getControllerInput();
         $file = $this->getFileInput();
 
-        dd($this->getRoutePath($controller));
-
         if (!file_exists($file)) {
             $this->components->error(sprintf('Route file [%s] does not exist.', $file));
             return false;
         }
 
-        $controllerNamespace = $this->resolveControllerNamespace($controller);
-        if (!class_exists($controllerNamespace)) {
+        $namespace = $this->resolveControllerNamespace($controller);        
+        if (!file_exists(base_path(str($namespace)->lcfirst() . '.php'))) {
             $this->components->error(sprintf('Controller [%s] does not exist.', $controller));
             return false;
         }
-
         $content = file_get_contents($file);
-        $content .= sprintf("\n\nuse %s;", $controllerNamespace);
+        $content .= sprintf("\n\nuse %s;", str($namespace)->replace('/', '\\'));
         $content .= $this->getRouteContent($controller);
 
-        file_put_contents($file, $this->sortImports($content));
+        file_put_contents($file, $this->organiseFileContent($content));
 
         $this->components->info(sprintf('Route for controller [%s] created successfully.', $controller));
     }

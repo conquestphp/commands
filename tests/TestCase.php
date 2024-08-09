@@ -23,6 +23,6 @@ class TestCase extends Orchestra
 
     protected function getEnvironmentSetUp($app)
     {
-        // Perform any environment setup here
+        $app->setBasePath(__DIR__ . '/../workbench');
     }
 }

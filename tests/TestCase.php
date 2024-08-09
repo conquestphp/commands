@@ -2,9 +2,8 @@
 
 namespace Conquest\Assemble\Tests;
 
-use Orchestra\Testbench\TestCase as Orchestra;
 use Conquest\Assemble\AssembleServiceProvider;
-use Conquest\Assemble\Console\Commands\ConquestMakeCommand;
+use Orchestra\Testbench\TestCase as Orchestra;
 use Workbench\App\Providers\WorkbenchServiceProvider;
 
 class TestCase extends Orchestra

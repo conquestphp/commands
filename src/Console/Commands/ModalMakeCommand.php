@@ -2,14 +2,16 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Support\Str;
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputOption;
 
 class ModalMakeCommand extends GeneratorCommand
 {
     protected $name = 'make:modal';
+
     protected $description = 'Create a new modal';
+
     protected $type = 'Modal';
 
     protected function getStub()
@@ -17,12 +19,14 @@ class ModalMakeCommand extends GeneratorCommand
         if ($this->option('form')) {
             return $this->resolveStubPath('/stubs/conquest.modal.form.stub');
         }
+
         return $this->resolveStubPath('/stubs/conquest.modal.stub');
     }
 
     protected function getPath($name)
     {
         $name = Str::replaceFirst($this->rootNamespace(), '', $name);
+
         return resource_path().'/'.str_replace('\\', '/', $name).'.'.config('assemble.extension');
     }
 

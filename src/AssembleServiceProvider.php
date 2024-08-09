@@ -28,7 +28,7 @@ class AssembleServiceProvider extends ServiceProvider
                 ConquestMakeCommand::class,
                 PageMakeCommand::class,
                 ModalMakeCommand::class,
-                ComponentMakeCommand::class
+                ComponentMakeCommand::class,
             ]);
         }
 
@@ -48,7 +48,7 @@ class AssembleServiceProvider extends ServiceProvider
             ConquestMakeCommand::class,
             PageMakeCommand::class,
             ModalMakeCommand::class,
-            ComponentMakeCommand::class
+            ComponentMakeCommand::class,
         ];
     }
 }

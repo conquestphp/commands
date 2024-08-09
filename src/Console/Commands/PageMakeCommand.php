@@ -2,14 +2,16 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Support\Str;
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputOption;
 
 class PageMakeCommand extends GeneratorCommand
 {
     protected $name = 'make:page';
+
     protected $description = 'Create a new page';
+
     protected $type = 'Page';
 
     protected function getStub()
@@ -17,12 +19,14 @@ class PageMakeCommand extends GeneratorCommand
         if ($this->option('form')) {
             return $this->resolveStubPath('/stubs/conquest.page.form.stub');
         }
+
         return $this->resolveStubPath('/stubs/conquest.page.stub');
     }
 
     protected function getPath($name)
     {
         $name = Str::replaceFirst($this->rootNamespace(), '', $name);
+
         return resource_path().'/'.str_replace('\\', '/', $name).'.'.config('assemble.extension');
     }
 

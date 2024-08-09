@@ -2,14 +2,16 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Support\Str;
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputOption;
 
 class ComponentMakeCommand extends GeneratorCommand
 {
     protected $name = 'make:component';
+
     protected $description = 'Create a new component';
+
     protected $type = 'Component';
 
     protected function getStub()
@@ -20,6 +22,7 @@ class ComponentMakeCommand extends GeneratorCommand
     protected function getPath($name)
     {
         $name = Str::replaceFirst($this->rootNamespace(), '', $name);
+
         return resource_path().'/'.str_replace('\\', '/', $name).'.'.config('assemble.extension');
     }
 

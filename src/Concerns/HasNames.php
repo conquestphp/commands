@@ -12,10 +12,10 @@ trait HasNames
         'Edit',
         'Update',
         'Delete',
-        'Destroy'
+        'Destroy',
     ];
 
-     /**
+    /**
      * Parse the name of the class
      *
      * @param  string  $name
@@ -33,15 +33,16 @@ trait HasNames
 
         // Reconstruct the path including the final word
         $name = implode('/', $system);
-        $name .= '/' . implode('', $words);
+        $name .= '/'.implode('', $words);
 
         // Add back the final word to the name if it is not a method
-        if (!in_array($finalWord, $this->methods)) {
+        if (! in_array($finalWord, $this->methods)) {
             $name .= $finalWord;
         }
 
         // Check if the final word is in methods, remove it as give it as the type
         $method = in_array($finalWord, $this->methods) ? $finalWord : null;
+
         return [$name, $method];
     }
 
@@ -64,7 +65,7 @@ trait HasNames
      */
     public function getFullName($name, $method = null)
     {
-        return $name . ($method ? $method : '');
+        return $name.($method ? $method : '');
     }
 
     /**
@@ -79,6 +80,7 @@ trait HasNames
         $name = str_replace('\\', '/', $name);
         $name = explode('/', $name);
         $name = array_pop($name);
+
         return $name;
     }
 
@@ -91,7 +93,7 @@ trait HasNames
      */
     public function getRequest($name, $method)
     {
-        return $this->getFullName($name, $method) . 'Request';
+        return $this->getFullName($name, $method).'Request';
     }
 
     /**
@@ -103,14 +105,14 @@ trait HasNames
      */
     public function getRequestNamespace($name, $method)
     {
-        $namespace = $this->getNamespace($name) . 'App\\Http\\Requests\\';
+        $namespace = $this->getNamespace($name).'App\\Http\\Requests\\';
         $requestName = $this->getRequest($name, $method);
         $requestPath = str_replace('\\', '/', $requestName);
         $requestParts = explode('/', $requestPath);
         $className = array_pop($requestParts);
         $subNamespace = implode('\\', $requestParts);
-        
-        return $namespace . ($subNamespace ? $subNamespace . '\\' : '') . $className;
+
+        return $namespace.($subNamespace ? $subNamespace.'\\' : '').$className;
     }
 
     /**
@@ -122,7 +124,7 @@ trait HasNames
      */
     public function getController($name, $method)
     {
-        return $this->getFullName($name, $method) . 'Controller';
+        return $this->getFullName($name, $method).'Controller';
     }
 
     /**
@@ -134,14 +136,14 @@ trait HasNames
      */
     public function getControllerNamespace($name, $method)
     {
-        $namespace = $this->getNamespace($name) . 'App\\Http\\Controllers\\';
+        $namespace = $this->getNamespace($name).'App\\Http\\Controllers\\';
         $controllerName = $this->getController($name, $method);
         $controllerPath = str_replace('\\', '/', $controllerName);
         $controllerParts = explode('/', $controllerPath);
         $className = array_pop($controllerParts);
         $subNamespace = implode('\\', $controllerParts);
-        
-        return $namespace . ($subNamespace ? $subNamespace . '\\' : '') . $className;
+
+        return $namespace.($subNamespace ? $subNamespace.'\\' : '').$className;
     }
 
     /**
@@ -163,12 +165,12 @@ trait HasNames
      */
     public function getModelNamespace($name)
     {
-        return $this->getNamespace($name) . 'Models\\' . $this->getModel($name);
+        return $this->getNamespace($name).'Models\\'.$this->getModel($name);
     }
 
     /**
      * Get the name of the javascript resource class referenced by Inertia
-     * 
+     *
      * @param  string  $name
      * @param  ?string  $method
      * @return string
@@ -177,9 +179,4 @@ trait HasNames
     {
         return $this->getFullName($name, $method);
     }
-
-
-
-
-
 }

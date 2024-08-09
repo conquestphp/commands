@@ -5,7 +5,7 @@ namespace Conquest\Assemble\Concerns;
 trait IsInertiable
 {
     public $modalMethods = [
-        'Delete'
+        'Delete',
     ];
 
     public $pageMethods = [
@@ -28,8 +28,8 @@ trait IsInertiable
 
     /**
      * Check whether the method renders a page by default
-     * 
-     * @param string $method
+     *
+     * @param  string  $method
      * @return bool
      */
     public function isPage($method)
@@ -39,8 +39,8 @@ trait IsInertiable
 
     /**
      * Check whether the method renders a modal by default
-     * 
-     * @param string $method
+     *
+     * @param  string  $method
      * @return bool
      */
     public function isModal($method)
@@ -50,10 +50,10 @@ trait IsInertiable
 
     /**
      * Check whether the method renders a page or modal by default
-     * 
-     * @param string $method
+     *
+     * @param  string  $method
      * @return bool
-        */
+     */
     public function isInertiable($method)
     {
         return $this->isPage($method) || $this->isModal($method);
@@ -61,8 +61,8 @@ trait IsInertiable
 
     /**
      * Check whether the method renders a form by default
-     * 
-     * @param string $method
+     *
+     * @param  string  $method
      * @return bool
      */
     public function isForm($method)
@@ -72,8 +72,8 @@ trait IsInertiable
 
     /**
      * Checks whether the method cannot generate a javascript resource file
-     * 
-     * @param string $method
+     *
+     * @param  string  $method
      * @return bool
      */
     public function isNotInertiable($method)

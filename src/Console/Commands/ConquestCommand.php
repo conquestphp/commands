@@ -2,14 +2,14 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Conquest\Assemble\Concerns\HasMethods;
 use Illuminate\Support\Str;
+use function Laravel\Prompts\text;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\confirm;
 use Conquest\Assemble\Concerns\HasNames;
 use Illuminate\Console\GeneratorCommand;
 use function Laravel\Prompts\multiselect;
-use function Laravel\Prompts\text;
-use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\select;
+use Conquest\Assemble\Concerns\HasMethods;
 
 use Conquest\Assemble\Concerns\IsInertiable;
 use Conquest\Assemble\Concerns\ResolvesStubPath;
@@ -19,6 +19,7 @@ use Symfony\Component\Console\Input\InputArgument;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 #[AsCommand(name: 'conquest')]
 class ConquestCommand extends GeneratorCommand
@@ -32,7 +33,7 @@ class ConquestCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $type = 'Conquest';
+    protected $type = 'Controller';
 
     /**
      * The console command name.
@@ -154,24 +155,18 @@ class ConquestCommand extends GeneratorCommand
 
         if ($this->option('resource')) {
             $this->call('make:resource', [
-                'name' => $name,
+                'name' => str($name)->append('Resource'),
                 '--force' => $this->option('force'),
             ]);
         }
 
         if ($this->option('crud')) {
             foreach ($this->methods as $method) {
-                if (! $this->createConquest($name, $method)) {
-                    return false;
-                }
+                $this->createConquest($name, $method);
             }
         } else {
-            if (! $this->createConquest($name, $method)) {
-                return false;
-            }
+            $this->createConquest($name, $method);
         }
-
-        $this->components->success('All Conquest components created successfully.');
 
         return true;
     }
@@ -185,18 +180,63 @@ class ConquestCommand extends GeneratorCommand
     {
         return [
             'name' => [
-                'What argument should be used as the generator for this conquest command?',
+                'What name should be used as the generator for this conquest command?',
                 'E.g. User',
             ],
-            'method' => [
-                'What methods should be used for this conquest command? (Select multiple if needed)',
-                'Available options: index, create, store, show, edit, update, destroy',
-                fn () => select(
-                    'Select methods:',
-                    ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']
-                ),
-            ],
         ];
+    }
+
+    /**
+     * Interact further with the user if they were prompted for missing arguments.
+     *
+     * @return void
+     */
+    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
+    {
+        if ($this->isReservedName($this->getNameInput()) || $this->didReceiveOptions($input)) {
+            return;
+        }
+
+        $method = select('What method should be used for this conquest command?', [
+            'Index', 'Create', 'Store', 'Show', 'Edit', 'Update', 'Destroy', 'Delete', 'None'
+        ]);
+        $input->setArgument('method', $method);
+
+
+        collect(multiselect('Would you like any of the following?', [
+            'all' => 'All',
+            'crud' => 'CRUD',
+            'force' => 'Force creation',
+            'model' => 'Model',
+            'route' => 'Web Route(s)',
+        ]))->each(fn ($option) => $input->setOption($option, true));
+
+        if ($input->getOption('all')) {
+            return;
+        }        
+
+        if ($input->getOption('model')) {
+            collect(multiselect('Would you like to additionally create any of the following for the given model?', [
+                'factory' => 'Factory',
+                'migration' => 'Migration',
+                'policy' => 'Policy',
+                'resource' => 'Resource',
+                'seed' => 'Seeder',
+            ]))->each(fn ($option) => $input->setOption($option, true));
+        }
+
+        if (!$this->isResourceless($input->getArgument('method'))) {
+            collect(multiselect('Would you like change the behaviour of the generated Javascript resource?', [
+                'page' => 'Page',
+                'modal' => 'Modal',
+                'form' => 'As form',
+            ]))->each(fn ($option) => $input->setOption($option, true));
+        }
+
+        if ($this->option('route')) {
+            $route = text('What route file would you like to add the generated routes to?');
+            $input->setOption('file', $route);
+        }
     }
 
     /**
@@ -283,7 +323,7 @@ class ConquestCommand extends GeneratorCommand
     {
         $request = $this->getBase($this->getRequest($name, $method));
 
-        if ($this->option('model')) {
+        if ($this->option('model') && $this->isScoped($method)) {
             $model = $this->getBase($name);
             $stub = str_replace(['{{ invoke }}', '{{invoke}}'], sprintf('public function __invoke(%s $request, %s $%s)', $request, $model, str($model)->camel()), $stub);
         } else {
@@ -341,6 +381,27 @@ class ConquestCommand extends GeneratorCommand
         return str($name)->append($method)->append('Controller');
     }
 
+    protected function overrideRequestAuthorization($name, $method)
+    {
+        $path = $this->getPath($this->getRequest($name, $method)->prepend('Http/Requests/'));
+        try {
+            $content = $this->files->get($path);
+        } catch (FileNotFoundException $e) {
+            $this->components->warn('Unable to override request authorization using policy.');
+            return false;
+        }
+
+        $content = str_replace('return false;', sprintf('return $this->user()->can(\'%s\', %s::class);', match(str($method)->lower()->toString()) {
+            'index' => 'viewAny',
+            'create', 'store' => 'create',
+            'edit', 'update' => 'update',
+            'delete', 'destroy' => 'delete',
+            default => 'view',
+        }, $base = $this->getBase($name)), $content);
+        $content = str_replace('use Illuminate\Http\Request;', sprintf("use Illuminate\Http\Request;\nuse App\Models\%s;", str($base)->prepend('App/Models/')->replace('/', '\\')), $content);
+        $this->files->put($path, $this->sortImports($content));
+    }
+
     /**
      * Create a Conquest controller and request pair, and any Javascript resources.
      *
@@ -350,7 +411,7 @@ class ConquestCommand extends GeneratorCommand
     protected function createConquest($name, $method)
     {
         $controller = $this->getController($name, $method);
-        $controllerPath = $controller->prepend('Http/Controllers/');
+        $controllerPath = $controller->prepend('Http/Controllers/')->toString();
         $path = $this->getPath($controllerPath);
 
         if ((! $this->hasOption('force') ||
@@ -368,14 +429,14 @@ class ConquestCommand extends GeneratorCommand
             $path = str_replace('/', '\\', $path);
         }
 
-        $this->components->info(sprintf('Controller [%s] created successfully.', $path));
+        $this->components->info(sprintf($this->type.' [%s] created successfully.', $path));
 
         $this->call('make:request', [
             'name' => $this->getRequest($name, $method),
             '--force' => $this->option('force'),
         ]);
 
-        $this->call('make:route', [
+        $this->call('add:route', [
             'controller' => $controller,
             '--model' => $this->option('model'),
             '--file' => $this->option('file'),
@@ -383,80 +444,33 @@ class ConquestCommand extends GeneratorCommand
         ]);
 
         if ($this->option('model') && $this->option('policy')) {
-            // Overwrite the request authorize with the policy
+            $this->overrideRequestAuthorization($name, $method);
         }
 
         $resource = str($name)->append($method);
 
         return match (true) {
-            $this->option('page') && ! $this->isNotInertiable($method) => $this->call('make:page', [
+            $this->option('page') && ! $this->isResourceless($method) => $this->call('make:page', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
-            $this->option('modal') && ! $this->isNotInertiable($method) => $this->call('make:modal', [
+            $this->option('modal') && ! $this->isResourceless($method) => $this->call('make:modal', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
-            $this->isPage($method) => $this->call('make:page', [
+            $this->hasPage($method) => $this->call('make:page', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
-            $this->isModal($method) => $this->call('make:modal', [
+            $this->hasModal($method) => $this->call('make:modal', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
             default => true,
         };
-    }
-
-    /**
-     * Interact further with the user if they were prompted for missing arguments.
-     *
-     * @return void
-     */
-    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
-    {
-        if ($this->isReservedName($this->getNameInput()) || $this->didReceiveOptions($input)) {
-            return;
-        }
-
-        collect(multiselect('Would you like any of the following?', [
-            'all' => 'All',
-            'crud' => 'CRUD',
-            'force' => 'Force creation',
-            'model' => 'Model',
-            'route' => 'Web Route(s)',
-        ]))->each(fn ($option) => $input->setOption($option, true));
-
-        if ($input->getOption('all')) {
-            return;
-        }        
-
-        if ($input->getOption('model')) {
-            collect(multiselect('Would you like to additionally create any of the following for the given model?', [
-                'factory' => 'Factory',
-                'migration' => 'Migration',
-                'policy' => 'Policy',
-                'resource' => 'Resource',
-                'seed' => 'Seeder',
-            ]))->each(fn ($option) => $input->setOption($option, true));
-        }
-
-        if (true) {
-            collect(multiselect('Would you like change the behaviour of the generated Javascript resource?', [
-                'page' => 'Page',
-                'modal' => 'Modal',
-                'form' => 'As form',
-            ]))->each(fn ($option) => $input->setOption($option, true));
-        }
-
-        if ($this->option('route')) {
-            $route = text('What route file would you like to add the generated routes to?');
-            $input->setOption('file', $route);
-        }
     }
 }

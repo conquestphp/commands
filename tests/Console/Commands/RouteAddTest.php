@@ -15,7 +15,7 @@ afterEach(function () {
 });
 
 it('can add an index route to web.php', function () {
-    Artisan::call('make:route', [
+    Artisan::call('add:route', [
         'controller' => 'TestIndex',
     ]);
 
@@ -26,7 +26,7 @@ it('can add an index route to web.php', function () {
 });
 
 it('can add a update route to web.php', function () {
-    Artisan::call('make:route', [
+    Artisan::call('add:route', [
         'controller' => 'Test/TestUpdateController',
     ]);
 
@@ -37,7 +37,7 @@ it('can add a update route to web.php', function () {
 });
 
 it('can add a destroy route to web.php', function () {
-    Artisan::call('make:route', [
+    Artisan::call('add:route', [
         'controller' => 'Test/TestDestroyController',
     ]);
 
@@ -48,7 +48,7 @@ it('can add a destroy route to web.php', function () {
 });
 
 it('can add a store route to web.php', function () {
-    Artisan::call('make:route', [
+    Artisan::call('add:route', [
         'controller' => 'Test/TestStoreController',
     ]);
 
@@ -62,7 +62,7 @@ it('can add to a custom route file', function () {
     $path = base_path('routes/test.php');
     File::put($path, "<?php\n\nuse Illuminate\Support\Facades\Route;\n");
 
-    Artisan::call('make:route', [
+    Artisan::call('add:route', [
         'controller' => 'TestIndexController',
         '--file' => 'test.php',
     ]);
@@ -78,7 +78,7 @@ it('can add to a custom route file', function () {
 });
 
 it('can use a model for the route', function () {
-    Artisan::call('make:route', [
+    Artisan::call('add:route', [
         'controller' => 'Test/TestDestroyController',
         '--model' => true,
     ]);
@@ -90,7 +90,7 @@ it('can use a model for the route', function () {
 });
 
 it('can limit to a class base name for the route name', function () {
-    Artisan::call('make:route', [
+    Artisan::call('add:route', [
         'controller' => 'Test/TestDestroyController',
         '--class' => true,
     ]);

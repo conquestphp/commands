@@ -26,7 +26,6 @@ abstract class ResourceGeneratorCommand extends GeneratorCommand
         }
 
         $name = $this->qualifyClass($this->getNameInput());
-
         $path = $this->getPath($name);
 
         if ((! $this->hasOption('force') ||
@@ -60,7 +59,7 @@ abstract class ResourceGeneratorCommand extends GeneratorCommand
     {
         $name = Str::replaceFirst($this->rootNamespace(), '', $name);
         $extension = config('assemble.extension', 'vue');
-        $name = trim(trim($name, $extension), '.');
+        $name = trim(str_replace('.'.$extension, '', $name));
 
         return resource_path(trim($this->rootNamespace(), '/').'/'.str_replace('\\', '/', $name).'.'.$extension);
     }

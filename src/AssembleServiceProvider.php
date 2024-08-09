@@ -6,7 +6,7 @@ use Conquest\Assemble\Console\Commands\ComponentMakeCommand;
 use Conquest\Assemble\Console\Commands\ConquestCommand;
 use Conquest\Assemble\Console\Commands\ModalMakeCommand;
 use Conquest\Assemble\Console\Commands\PageMakeCommand;
-use Conquest\Assemble\Console\Commands\RouteMakeCommand;
+use Conquest\Assemble\Console\Commands\RouteAddCommand;
 use Illuminate\Support\ServiceProvider;
 
 class AssembleServiceProvider extends ServiceProvider
@@ -30,7 +30,7 @@ class AssembleServiceProvider extends ServiceProvider
                 PageMakeCommand::class,
                 ModalMakeCommand::class,
                 ComponentMakeCommand::class,
-                RouteMakeCommand::class,
+                RouteAddCommand::class,
             ]);
         }
 
@@ -51,7 +51,7 @@ class AssembleServiceProvider extends ServiceProvider
             PageMakeCommand::class,
             ModalMakeCommand::class,
             ComponentMakeCommand::class,
-            RouteMakeCommand::class,
+            RouteAddCommand::class,
         ];
     }
 }

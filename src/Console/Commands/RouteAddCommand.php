@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
-class RouteMakeCommand extends Command
+class RouteAddCommand extends Command
 {
     use HasMethods;
 
@@ -17,14 +17,14 @@ class RouteMakeCommand extends Command
      *
      * @var string
      */
-    protected $name = 'make:route';
+    protected $name = 'add:route';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Append a new route from a controller.';
+    protected $description = 'Add a new route from a controller.';
 
     /**
      * Prompt for missing input arguments using the returned questions.
@@ -188,12 +188,10 @@ class RouteMakeCommand extends Command
         if ($this->option('class')) {
             return str(end($parts))->kebab()->singular() . '.' . str($method)->kebab();
         }
-
-        return collect($parts)
+        return str(collect($parts)
             ->map(fn ($part) => str($part)->kebab()->singular())
-            ->implode('.')
-            . '.'
-            . str($method)->kebab();
+            ->implode('.'))
+            ->when($method, fn ($route) => $route . '.' . str($method)->kebab());
     }
 
     /**
@@ -224,7 +222,7 @@ class RouteMakeCommand extends Command
 
         file_put_contents($file, $this->organiseFileContent($content));
 
-        $this->components->info(sprintf('Route for controller [%s] created successfully.', $controller));
+        $this->components->success(sprintf('Route for controller [%s] created successfully.', $controller));
     }
 
 }

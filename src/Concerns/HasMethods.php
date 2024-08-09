@@ -2,8 +2,6 @@
 
 namespace Conquest\Assemble\Concerns;
 
-use Illuminate\Support\Str;
-
 trait HasMethods
 {
     public $methods = [
@@ -71,7 +69,7 @@ trait HasMethods
      */
     public function getHttpMethod($method)
     {
-        return match (Str::lower($method)) {
+        return match (str($method)->lower()->toString()) {
             'store' => 'post',
             'update' => 'patch',
             'destroy' => 'delete',
@@ -98,12 +96,16 @@ trait HasMethods
      */
     public function hasPage($method)
     {
-        return in_array($method, [
-            'Index',
-            'Show',
-            'Create',
-            'Edit',
-        ]);
+        return in_array(
+            strtolower($method),
+            collect([
+                'Index',
+                'Show',
+                'Create',
+                'Edit',
+            ])->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
     }
 
     /**
@@ -114,9 +116,13 @@ trait HasMethods
      */
     public function hasModal($method)
     {
-        return in_array($method, [
-            'Delete',
-        ]);
+        return in_array(
+            strtolower($method),
+            collect([
+                'Delete'
+            ])->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
     }
 
     /**
@@ -127,25 +133,34 @@ trait HasMethods
      */
     public function hasForm($method)
     {
-        return in_array($method, [
-            'Edit',
-            'Create',
-        ]);
+        return in_array(
+            strtolower($method),
+            collect([
+                'Edit',
+                'Create',
+            ])->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
     }
 
      /**
-     * Checks whether the method cannot generate a javascript resource file
+     * Checks whether the method cannot generate a javascript resource file, or cannot change
      *
      * @param  string  $method
      * @return bool
      */
     public function isResourceless($method)
     {
-        return in_array($method, [
-            'Store',
-            'Update',
-            'Destroy',
-        ]);
+        return in_array(
+            strtolower($method),
+            collect([
+                'Store',
+                'Update',
+                'Destroy',
+                'Index', // Cannot be a modal -> fixed
+            ])->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
     }
 
     /**
@@ -156,12 +171,16 @@ trait HasMethods
      */
     public function isScoped($method)
     {
-        return in_array($method, [
-            'Show',
-            'Edit',
-            'Update',
-            'Delete',
-            'Destroy',
-        ]);
+        return in_array(
+            strtolower($method),
+            collect([
+                'Show',
+                'Edit',
+                'Update',
+                'Delete',
+                'Destroy',
+            ])->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
     }
 }

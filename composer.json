@@ -61,7 +61,7 @@
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint",
-        "artisan": "@php ./vendor/bin/testbench",
+        "artisan": "php ./vendor/bin/testbench",
         "check": [
             "@composer run analyse",
             "@composer run test",

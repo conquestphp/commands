@@ -2,9 +2,13 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
+use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+use function Laravel\Prompts\multiselect;
 
 class ModalMakeCommand extends GeneratorCommand
 {
@@ -50,8 +54,25 @@ class ModalMakeCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
-            ['force', null, InputOption::VALUE_NONE, 'Overwrite the modal even if the modal already exists'],
-            ['form', 'f', InputOption::VALUE_NONE, 'Generate a form modal'],
+            ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the modal even if the modal already exists'],
+            ['form', 'F', InputOption::VALUE_NONE, 'Indicates whether the generated modal should be a form'],
         ];
+    }
+
+     /**
+     * Interact further with the user if they were prompted for missing arguments.
+     *
+     * @return void
+     */
+    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
+    {
+        if ($this->isReservedName($this->getNameInput()) || $this->didReceiveOptions($input)) {
+            return;
+        }
+
+        collect(multiselect('Would you like any of the following?', [
+            'form' => 'As form',
+            'force' => 'Force creation',
+        ]))->each(fn ($option) => $input->setOption($option, true));
     }
 }

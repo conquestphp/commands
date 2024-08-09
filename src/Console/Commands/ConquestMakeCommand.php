@@ -4,6 +4,7 @@ namespace Conquest\Assemble\Console\Commands;
 
 use Conquest\Assemble\Concerns\HasNames;
 use Conquest\Assemble\Concerns\IsInertiable;
+use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -18,6 +19,7 @@ class ConquestMakeCommand extends GeneratorCommand
 {
     use HasNames;
     use IsInertiable;
+    use ResolvesStubPath;
 
     /**
      * The type of class being generated.
@@ -48,19 +50,6 @@ class ConquestMakeCommand extends GeneratorCommand
     protected function getStub()
     {
         return $this->resolveStubPath('/stubs/conquest.controller.stub');
-    }
-
-    /**
-     * Resolve the fully-qualified path to the stub.
-     *
-     * @param  string  $stub
-     * @return string
-     */
-    protected function resolveStubPath($stub)
-    {
-        return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
-                        ? $customPath
-                        : __DIR__.'/../../..'.$stub;
     }
 
     /**
@@ -350,12 +339,12 @@ class ConquestMakeCommand extends GeneratorCommand
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
-            $this->isPage($name) => $this->call('make:page', [
+            $this->isPage($method) => $this->call('make:page', [
                 'name' => $this->getResource($name, $method),
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
-            $this->isModal($name) => $this->call('make:modal', [
+            $this->isModal($method) => $this->call('make:modal', [
                 'name' => $this->getResource($name, $method),
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
@@ -382,6 +371,7 @@ class ConquestMakeCommand extends GeneratorCommand
             'model' => 'Model',
             'page' => 'Page',
             'modal' => 'Modal',
+            'form' => 'As form',
             'seed' => 'Database Seeder',
             'factory' => 'Factory',
             'migration' => 'Migration',

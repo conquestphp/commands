@@ -160,7 +160,7 @@ class RouteMakeCommand extends Command
         return sprintf("\nRoute::%s('/%s', %s::class)->name('%s');\n", 
             $this->getHttpMethod($this->getMethodName($controller)), 
             $this->getRoutePath($controller), 
-            last(explode('/', $controller)), 
+            $this->getBase($controller), 
             $this->getRouteName($controller)
         );
     }

@@ -99,7 +99,6 @@ class ConquestCommand extends GeneratorCommand
             ['factory', 'f', InputOption::VALUE_NONE, 'Create a new factory for the model'],
             ['resource', 'r', InputOption::VALUE_NONE, 'Create a new resource for the model'],
 
-            // ['model', 'g', InputOption::VALUE_NONE, 'Indicates whether to generate any created routes with the model'],
             ['crud', 'c', InputOption::VALUE_NONE, 'Generate endpoints for CRUD operations'],
             ['route', 'R', InputOption::VALUE_NONE, 'Indicates whether the generated controller should be added to the route.php or specified route file'],
             ['file', 'W', InputOption::VALUE_OPTIONAL, 'Supply the file to create the route routes in'],
@@ -135,7 +134,7 @@ class ConquestCommand extends GeneratorCommand
         $name = $this->getPureClassName($this->getNameInput());
         $method = $this->getMethodInput();
         
-        if ((! $method || $this->isValidMethod($method)) && ! $this->option('crud')) {
+        if (!$method && !$this->isValidMethod($method) && !$this->option('crud')) {
             $this->components->warn('You have not supplied a valid method.');
             if (! confirm('Are you sure you want to proceed? This will limit some of the functionality available.')) {
                 return false;
@@ -144,7 +143,7 @@ class ConquestCommand extends GeneratorCommand
 
         if ($this->option('model')) {
             $this->call('make:model', [
-                'name' => last(explode('/', $name)),
+                'name' => $this->getBase($name),
                 '--force' => $this->option('force'),
                 '--factory' => $this->option('factory'),
                 '--seed' => $this->option('seed'),
@@ -178,29 +177,6 @@ class ConquestCommand extends GeneratorCommand
     }
 
     /**
-     * Build the class with the given name.
-     *
-     * @param  string  $name
-     * @param  ?string  $method
-     * @return string
-     *
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     */
-    protected function buildConquestClass($name, $method)
-    {
-        $stub = $this->files->get($this->getStub());
-
-        return $this->replaceNamespace($stub, $this->getControllerNamespace($name, $method))
-            ->replaceRequest($stub, $this->getRequestNamespace($name, $method))
-            ->replaceInertia($stub, $name)
-            ->replaceModel($stub, $this->getModelNamespace($name))
-            ->replaceInvoke($stub, $name, $method)
-            ->replaceResponse($stub, $name, $method)
-            ->replaceEmptyLines($stub)
-            ->replaceClass($stub, $this->getController($this->getClassName($name), $method));
-    }
-
-    /**
      * Prompt for missing input arguments using the returned questions.
      *
      * @return array
@@ -222,6 +198,30 @@ class ConquestCommand extends GeneratorCommand
             ],
         ];
     }
+
+    /**
+     * Build the class with the given name.
+     *
+     * @param  string  $name
+     * @param  ?string  $method
+     * @return string
+     *
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     */
+    protected function buildConquestClass($name, $method)
+    {
+        $stub = $this->files->get($this->getStub());
+
+        return $this->replaceNamespace($stub, $this->getController($name, $method)->prepend('App/Http/Controllers/')->explode('/')->slice(0, -1)->implode('\\'))
+            ->replaceRequest($stub, $this->getRequest($name, $method)->prepend('App/Http/Requests/')->replace('/', '\\'))
+            ->replaceInertia($stub, $method)
+            ->replaceModel($stub, str($this->getBase($name))->prepend('App/Models/')->replace('/', '\\'))
+            ->replaceInvoke($stub, $name, $method)
+            ->replaceResponse($stub, $name, $method)
+            ->replaceEmptyLines($stub)
+            ->replaceClass($stub, $this->getBase($this->getController($name, $method)));
+    }
+
 
     /**
      * Replace the request import to use the generated request.
@@ -281,13 +281,13 @@ class ConquestCommand extends GeneratorCommand
      */
     protected function replaceInvoke(&$stub, $name, $method)
     {
-        $request = $this->getClassName($this->getRequest($name, $method));
+        $request = $this->getBase($this->getRequest($name, $method));
 
         if ($this->option('model')) {
-            $model = $this->getModel($name);
-            $stub = str_replace(['{{ invoke }}', '{{invoke}}'], 'public function __invoke('.$request.' $request, '.$model.' '.Str::camel($model).')', $stub);
+            $model = $this->getBase($name);
+            $stub = str_replace(['{{ invoke }}', '{{invoke}}'], sprintf('public function __invoke(%s $request, %s $%s)', $request, $model, str($model)->camel()), $stub);
         } else {
-            $stub = str_replace(['{{ invoke }}', '{{invoke}}'], 'public function __invoke('.$request.' $request)', $stub);
+            $stub = str_replace(['{{ invoke }}', '{{invoke}}'], sprintf('public function __invoke(%s $request)', $request), $stub);
         }
 
         return $this;
@@ -303,14 +303,14 @@ class ConquestCommand extends GeneratorCommand
      */
     protected function replaceResponse(&$stub, $name, $method)
     {
-        $model = $this->getModel($name);
-        $props = $this->option('model') ? Str::camel($model).' => $'.$model.',' : '';
-        $resource = $this->getResource($name, $method);
+        $model = $this->getBase($name);
+        $props = $this->option('model') ? sprintf("'%s' => $%s", $c = str($model)->camel(), $c) : '';
+        $resource = str($name)->append($method);
 
         if ($this->isPage($method) || ($this->option('page') && ! $this->isNotInertiable($method))) {
-            $stub = str_replace(['{{ response }}', '{{response}}'], "return Inertia::render('".$resource."', [\n\t\t\t".$props."\n\t\t]);", $stub);
+            $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::render('%s', [\n\t\t\t%s\n\t\t]);", $resource, $props), $stub);
         } elseif ($this->isModal($method) || ($this->option('modal') && ! $this->isNotInertiable($method))) {
-            $stub = str_replace(['{{ response }}', '{{response}}'], "return Inertia::modal('".$resource."', [\n\t\t\t".$props."\n\t\t])->baseRoute('".config('assemble.base_route')."');", $stub);
+            $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::modal('%s', [\n\t\t\t%s\n\t\t])->baseRoute(%s);", $resource, $props, config('assemble.base_route')), $stub);
         } else {
             $stub = str_replace(['{{ response }}', '{{response}}'], 'return back();', $stub);
         }
@@ -331,6 +331,16 @@ class ConquestCommand extends GeneratorCommand
         return $this;
     }
 
+    protected function getRequest($name, $method)
+    {
+        return str($name)->append($method)->append('Request');
+    }
+
+    protected function getController($name, $method)
+    {
+        return str($name)->append($method)->append('Controller');
+    }
+
     /**
      * Create a Conquest controller and request pair, and any Javascript resources.
      *
@@ -339,7 +349,8 @@ class ConquestCommand extends GeneratorCommand
      */
     protected function createConquest($name, $method)
     {
-        $controllerPath = $this->getControllerNamespace($name, $method);
+        $controller = $this->getController($name, $method);
+        $controllerPath = $controller->prepend('Http/Controllers/');
         $path = $this->getPath($controllerPath);
 
         if ((! $this->hasOption('force') ||
@@ -364,28 +375,37 @@ class ConquestCommand extends GeneratorCommand
             '--force' => $this->option('force'),
         ]);
 
-        /**
-         * @todo: Overwrite the policy of the request if the --policy and --model options are used.
-         */
+        $this->call('make:route', [
+            'controller' => $controller,
+            '--model' => $this->option('model'),
+            '--file' => $this->option('file'),
+            '--class' => $this->option('model'),
+        ]);
+
+        if ($this->option('model') && $this->option('policy')) {
+            // Overwrite the request authorize with the policy
+        }
+
+        $resource = str($name)->append($method);
 
         return match (true) {
             $this->option('page') && ! $this->isNotInertiable($method) => $this->call('make:page', [
-                'name' => $this->getResource($name, $method),
+                'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
             $this->option('modal') && ! $this->isNotInertiable($method) => $this->call('make:modal', [
-                'name' => $this->getResource($name, $method),
+                'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
             $this->isPage($method) => $this->call('make:page', [
-                'name' => $this->getResource($name, $method),
+                'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),
             $this->isModal($method) => $this->call('make:modal', [
-                'name' => $this->getResource($name, $method),
+                'name' => $resource,
                 '--force' => $this->option('force'),
                 '--form' => $this->isForm($method),
             ]),

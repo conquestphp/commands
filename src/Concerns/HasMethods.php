@@ -80,6 +80,17 @@ trait HasMethods
     }
 
     /**
+     * Get the base name of a pure class name
+     * 
+     * @param string $name
+     * @return string
+     */
+    public function getBase(string $name)
+    {
+        return last(explode('/', $name));
+    }
+
+    /**
      * Check whether the method renders a page by default
      *
      * @param  string  $method

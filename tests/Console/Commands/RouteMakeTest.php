@@ -59,3 +59,46 @@ it('can add a store route to web.php', function () {
     expect($file)->toContain("use App\Http\Controllers\Test\TestStoreController;");
     expect($file)->toContain("Route::post('/test/test', TestStoreController::class)->name('test.test.store');");
 });
+
+it('can add to a custom route file', function () {
+    $path = base_path('routes/test.php');
+    File::put($path, "<?php\n\nuse Illuminate\Support\Facades\Route;\n");
+
+    Artisan::call('make:route', [
+        'controller' => 'TestIndexController',
+        '--file' => 'test.php',
+    ]);
+
+    $file = File::get($path);
+    
+    expect($file)->toContain("use App\Http\Controllers\TestIndexController;");
+    expect($file)->toContain("Route::get('/test', TestIndexController::class)->name('test.index');");
+
+    if (File::exists($path)) {
+        File::delete($path);
+    }
+});
+
+it('can use a model for the route', function () {
+    Artisan::call('make:route', [
+        'controller' => 'Test/TestDestroyController',
+        '--model' => true,
+    ]);
+
+    $file = File::get($this->web);
+
+    expect($file)->toContain("use App\Http\Controllers\Test\TestDestroyController;");
+    expect($file)->toContain("Route::delete('/test/{test}', TestDestroyController::class)->name('test.test.destroy');");
+});
+
+it('can limit to a class base name for the route name', function () {
+    Artisan::call('make:route', [
+        'controller' => 'Test/TestDestroyController',
+        '--class' => true,
+    ]);
+
+    $file = File::get($this->web);
+
+    expect($file)->toContain("use App\Http\Controllers\Test\TestDestroyController;");
+    expect($file)->toContain("Route::delete('/test/test', TestDestroyController::class)->name('test.destroy');");
+});

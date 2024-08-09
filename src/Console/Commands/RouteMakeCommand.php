@@ -44,8 +44,9 @@ class RouteMakeCommand extends Command
     protected function getOptions()
     {
         return [
-            ['structure', 's', InputOption::VALUE_NONE, 'Indicate whether the only the class name should be used to generate the route name'],
-            ['model', 'm', InputOption::VALUE_OPTIONAL, 'Indicates the model to bind to'],
+            ['class', 'c', InputOption::VALUE_NONE, 'Indicate whether to only use the base class name to generate the route name'],
+            ['model', 'm', InputOption::VALUE_NONE, 'Indicates whether to use the base class as a model name'],
+            ['file', 'f', InputOption::VALUE_OPTIONAL, 'The name of the route file to append to'],
         ];
     }
 
@@ -58,22 +59,7 @@ class RouteMakeCommand extends Command
     {
         return [
             ['controller', InputArgument::REQUIRED, 'The name of the controller inside the app/Http/Controllers directory'],
-            ['file', InputArgument::OPTIONAL, 'The name of the route file to append to'],
         ];
-    }
-
-    /**
-     * Get the model input.
-     * 
-     * @return string|null
-     */
-    protected function getModelInput()
-    {
-        if ($model = $this->option('model')) {
-            return str($model)->replace('/', '\\')->replace('App\\Models', '')->ltrim('\\')->replace('.php', '')->toString();
-        }
-
-        return null;
     }
 
     /**
@@ -83,18 +69,17 @@ class RouteMakeCommand extends Command
      */
     protected function getControllerInput()
     {
-        $controller = trim($this->argument('controller'));
+        $controller = str($this->argument('controller'))->trim();
 
-        if (Str::endsWith($controller, '.php')) {
-            $controller = Str::substr($controller, 0, -4);
+        if ($controller->endsWith('.php')) {
+            $controller = $controller->substr(0, -4);
         }
         // Ensure it ends with Controller
-        if (!Str::endsWith($controller, 'Controller')) {
-            return $controller . 'Controller';
+        if (!$controller->endsWith('Controller')) {
+            return $controller->append('Controller')->toString();
         }
 
-
-        return $controller;
+        return $controller->toString();
     }
 
     /**
@@ -102,26 +87,18 @@ class RouteMakeCommand extends Command
      *
      * @return string
      */
-    protected function getFileInput()
+    protected function getFileOption()
     {
-        $file = trim($this->argument('file'));
-
-        // If no file is provided, use the default route file.
-        if (empty($file)) {
+        if (!($file = $this->option('file'))) {
             return $this->route_path('web');
         }
-        
-        $file = trim($file, '/');
 
-        if (Str::endsWith($file, '.php')) {
-            $file = Str::substr($file, 0, -4);
-        }
+        return $this->route_path(str($file)->trim('/')
+            ->replace('.php', '')
+            ->when(fn ($file) => Str::startsWith($file, 'route/'), fn ($file) => $file->replace('route/', ''))
+            ->toString()
+        );
 
-        if (Str::startsWith($file, 'route/')) {
-            $file = Str::substr($file, 6);
-        }
-
-        return $file;
     }
 
     /**
@@ -135,9 +112,15 @@ class RouteMakeCommand extends Command
         return $this->laravel->basePath('routes/' . $file . '.php');
     }
 
+    /**
+     * Resolve the controller namespace.
+     * 
+     * @param  string  $controller
+     * @return string
+     */
     protected function resolveControllerNamespace($controller)
     {
-        return 'App/Http/Controllers/' . $controller;
+        return str($controller)->prepend('App/Http/Controllers/')->toString();
     }
 
     /**
@@ -186,9 +169,14 @@ class RouteMakeCommand extends Command
     {
         $parts = explode('/', $this->getPureClassName($controller));
 
+        $count = count($parts);
         return collect($parts)
-            ->map(fn ($part) => str($part)->kebab()->singular())
-            ->when($model = $this->getModelInput(), fn ($collection) => $collection->push(str($model)->camel()->singular()->prepend('{')->append('}')))
+            ->map(function ($part, $index) use ($count) {
+                if ($this->option('model') && $index === $count - 1) {
+                    return str($part)->camel()->singular()->prepend('{')->append('}');
+                }
+                return str($part)->kebab()->singular();
+            })
             ->implode('/');
     }
 
@@ -197,7 +185,7 @@ class RouteMakeCommand extends Command
         $method = $this->getMethodName($controller);
         $parts = explode('/', $this->getPureClassName($controller));
 
-        if ($this->option('structure')) {
+        if ($this->option('class')) {
             return str(end($parts))->kebab()->singular() . '.' . str($method)->kebab();
         }
 
@@ -218,7 +206,7 @@ class RouteMakeCommand extends Command
     public function handle()
     {
         $controller = $this->getControllerInput();
-        $file = $this->getFileInput();
+        $file = $this->getFileOption();
 
         if (!file_exists($file)) {
             $this->components->error(sprintf('Route file [%s] does not exist.', $file));

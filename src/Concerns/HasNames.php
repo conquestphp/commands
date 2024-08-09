@@ -103,7 +103,14 @@ trait HasNames
      */
     public function getRequestNamespace($name, $method)
     {
-        return $this->getNamespace($name) . 'App\\Http\\Requests\\' . $this->toNamespace($this->getRequest($name, $method));
+        $namespace = $this->getNamespace($name) . 'App\\Http\\Requests\\';
+        $requestName = $this->getRequest($name, $method);
+        $requestPath = str_replace('\\', '/', $requestName);
+        $requestParts = explode('/', $requestPath);
+        $className = array_pop($requestParts);
+        $subNamespace = implode('\\', $requestParts);
+        
+        return $namespace . ($subNamespace ? $subNamespace . '\\' : '') . $className;
     }
 
     /**
@@ -127,7 +134,14 @@ trait HasNames
      */
     public function getControllerNamespace($name, $method)
     {
-        return $this->getNamespace($name) . 'App\\Http\\Controllers\\' . $this->getController($name, $method);
+        $namespace = $this->getNamespace($name) . 'App\\Http\\Controllers\\';
+        $controllerName = $this->getController($name, $method);
+        $controllerPath = str_replace('\\', '/', $controllerName);
+        $controllerParts = explode('/', $controllerPath);
+        $className = array_pop($controllerParts);
+        $subNamespace = implode('\\', $controllerParts);
+        
+        return $namespace . ($subNamespace ? $subNamespace . '\\' : '') . $className;
     }
 
     /**

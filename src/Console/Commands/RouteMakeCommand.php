@@ -2,16 +2,15 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Conquest\Assemble\Concerns\HasNames;
+use Conquest\Assemble\Concerns\HasMethods;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
 class RouteMakeCommand extends Command
 {
-    use HasNames;
+    use HasMethods;
 
     /**
      * The console command name.
@@ -45,8 +44,8 @@ class RouteMakeCommand extends Command
     protected function getOptions()
     {
         return [
-            // ['namespace', 'n', InputOption::VALUE_NONE, 'Indicate whether the namespace should be used for the route name'],
-            ['model', 'm', InputOption::VALUE_NONE, 'Indicates the model to bind to'],
+            ['structure', 's', InputOption::VALUE_NONE, 'Indicate whether the only the class name should be used to generate the route name'],
+            ['model', 'm', InputOption::VALUE_OPTIONAL, 'Indicates the model to bind to'],
         ];
     }
 
@@ -61,6 +60,15 @@ class RouteMakeCommand extends Command
             ['controller', InputArgument::REQUIRED, 'The name of the controller inside the app/Http/Controllers directory'],
             ['file', InputArgument::OPTIONAL, 'The name of the route file to append to'],
         ];
+    }
+
+    protected function getModelInput()
+    {
+        if ($model = $this->option('model')) {
+            return str($model)->replace('/', '\\')->replace('App\\Models', '')->ltrim('\\')->replace('.php', '')->toString();
+        }
+
+        return null;
     }
 
     /**
@@ -124,7 +132,7 @@ class RouteMakeCommand extends Command
 
     protected function resolveControllerNamespace($controller)
     {
-        return 'App\Http\Controllers\\' . $controller;
+        return 'App\\Http\\Controllers\\' . $controller;
     }
 
     /**
@@ -146,63 +154,42 @@ class RouteMakeCommand extends Command
         return $stub;
     }
 
-    /**
-     * Get the HTTP method for the route.
-     * 
-     * @param  string  $method
-     * @return string
-     */
-    protected function getHttpMethod($method)
-    {
-        return match (Str::lower($method)) {
-            'store' => 'post',
-            'update' => 'patch',
-            'destroy' => 'delete',
-            default => 'get',
-        };
-    }
 
     protected function getRouteContent($controller)
     {
-        // Remove the Controller suffix from the controller name
-
-        // Retrieve the method name which should be suffixed to the controller using camel case
-        $name = Str::replaceLast('Controller', '', $controller);
-        $method = $this->getMethodName($name);
-        $httpMethod = $this->getHttpMethod($method);
+        $httpMethod = $this->getHttpMethod($this->getMethodName($controller));
 
         // Generate the route path
-        $routePath = $this->getRoutePath($name);
-        $routeName = $this->getRouteName($name, $method);
+        $routePath = $this->getRoutePath($controller);
+        $routeName = $this->getRouteName($controller);
 
-        return sprintf("\nRoute::%s('/%s', %s::class)->name(%s);", $httpMethod, $routePath, $controller, $routeName);
+        return sprintf("\nRoute::%s('/%s', %s::class)->name(%s);\n", $httpMethod, $routePath, $controller, $routeName);
     }
 
-    protected function getRoutePath($name)
+    protected function getRoutePath($controller)
     {
-        dd($name);
-        return Str::kebab($name);
+        $parts = explode('/', $this->getPureClassName($controller));
+
+        return collect($parts)
+            ->map(fn ($part) => str($part)->kebab()->singular())
+            ->when($model = $this->getModelInput(), fn ($collection) => $collection->push(str($model)->camel()->singular()->prepend('{')->append('}')))
+            ->implode('/');
     }
 
-    protected function getRouteName($name, $method)
+    protected function getRouteName($controller)
     {
-        return Str::kebab($name . '.' . $method);
-    }
+        $method = $this->getMethodName($controller);
+        $parts = explode('/', $this->getPureClassName($controller));
 
-    /**
-     * Get the method name from the controller.
-     *
-     * @param  string  $controller
-     * @return string
-     */
-    protected function getMethodName($controller)
-    {
-        $parts = explode('\\', $controller);
-        $className = end($parts);
-        
-        preg_match('/[A-Z][a-z]+$/', $className, $matches);
-        
-        return $matches[0];
+        if ($this->option('structure')) {
+            return str(end($parts))->kebab()->singular() . '.' . str($method)->kebab();
+        }
+
+        return collect($parts)
+            ->map(fn ($part) => str($part)->kebab()->singular())
+            ->implode('.')
+            . '.'
+            . str($method)->kebab();
     }
 
     /**
@@ -216,7 +203,8 @@ class RouteMakeCommand extends Command
     {
         $controller = $this->getControllerInput();
         $file = $this->getFileInput();
-        dd($this->getMethodName($controller));
+
+        dd($this->getRoutePath($controller));
 
         if (!file_exists($file)) {
             $this->components->error(sprintf('Route file [%s] does not exist.', $file));
@@ -229,9 +217,8 @@ class RouteMakeCommand extends Command
             return false;
         }
 
-        // Open the selected route file and append the new route
         $content = file_get_contents($file);
-        $content .= "\n\nuse {$controllerNamespace};";
+        $content .= sprintf("\n\nuse %s;", $controllerNamespace);
         $content .= $this->getRouteContent($controller);
 
         file_put_contents($file, $this->sortImports($content));

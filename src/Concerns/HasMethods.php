@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 
 trait HasMethods
 {
-    public const METHODS = [
+    public $methods = [
         'Index',
         'Show',
         'Create',
@@ -15,28 +15,6 @@ trait HasMethods
         'Update',
         'Delete',
         'Destroy',
-    ];
-
-    public const MODAL_METHODS = [
-        'Delete',
-    ];
-
-    public const PAGE_METHODS = [
-        'Index',
-        'Show',
-        'Create',
-        'Edit',
-    ];
-
-    public const RESOURCELESS_METHODS = [
-        'Store',
-        'Update',
-        'Destroy',
-    ];
-
-    public const FORM_METHODS = [
-        'Edit',
-        'Create',
     ];
 
     /**
@@ -47,7 +25,7 @@ trait HasMethods
      */
     public function isValidMethod($method)
     {
-        return in_array($method, self::METHODS);
+        return in_array($method, $this->methods);
     }
 
     /**
@@ -58,6 +36,7 @@ trait HasMethods
      */
     public function getMethodName($class)
     {
+        $class = str_replace(['Controller', 'Request'], '', $class);
         $parts = explode('/', $class);
         $methodName = end($parts);
         
@@ -68,6 +47,15 @@ trait HasMethods
         }
 
         return null;
+    }
+
+    public function getPureClassName($class)
+    {
+        $class = str_replace(['Controller', 'Request'], '', $class);
+        foreach ($this->methods as $method) {
+            $class = preg_replace('/' . $method . '$/', '', $class);
+        }
+        return $class;
     }
 
     /**
@@ -94,7 +82,12 @@ trait HasMethods
      */
     public function hasPage($method)
     {
-        return in_array($method, self::PAGE_METHODS);
+        return in_array($method, [
+            'Index',
+            'Show',
+            'Create',
+            'Edit',
+        ]);
     }
 
     /**
@@ -105,7 +98,9 @@ trait HasMethods
      */
     public function hasModal($method)
     {
-        return in_array($method, self::MODAL_METHODS);
+        return in_array($method, [
+            'Delete',
+        ]);
     }
 
     /**
@@ -116,7 +111,10 @@ trait HasMethods
      */
     public function hasForm($method)
     {
-        return in_array($method, self::MODAL_METHODS);
+        return in_array($method, [
+            'Edit',
+            'Create',
+        ]);
     }
 
      /**
@@ -127,6 +125,27 @@ trait HasMethods
      */
     public function isResourceless($method)
     {
-        return in_array($method, self::RESOURCELESS_METHODS);
+        return in_array($method, [
+            'Store',
+            'Update',
+            'Destroy',
+        ]);
+    }
+
+    /**
+     * Check whether the method can be scoped to a model
+     * 
+     * @param  string  $method
+     * @return bool
+     */
+    public function isScoped($method)
+    {
+        return in_array($method, [
+            'Show',
+            'Edit',
+            'Update',
+            'Delete',
+            'Destroy',
+        ]);
     }
 }

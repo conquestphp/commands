@@ -2,15 +2,14 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Support\Str;
-use function Laravel\Prompts\multiselect;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
-
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'make:conquest')]
+use function Laravel\Prompts\multiselect;
+
+#[AsCommand(name: 'make:modal')]
 class ModalMakeCommand extends ResourceGeneratorCommand
 {
     protected $name = 'make:modal';
@@ -41,7 +40,7 @@ class ModalMakeCommand extends ResourceGeneratorCommand
         ];
     }
 
-     /**
+    /**
      * Interact further with the user if they were prompted for missing arguments.
      *
      * @return void

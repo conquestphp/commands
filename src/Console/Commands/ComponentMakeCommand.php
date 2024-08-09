@@ -3,8 +3,8 @@
 namespace Conquest\Assemble\Console\Commands;
 
 use Conquest\Assemble\Concerns\ResolvesStubPath;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(name: 'make:js-component')]
 class ComponentMakeCommand extends ResourceGeneratorCommand

@@ -2,12 +2,13 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use function Laravel\Prompts\multiselect;
 use Conquest\Assemble\Concerns\ResolvesStubPath;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
+use function Laravel\Prompts\multiselect;
 
 #[AsCommand(name: 'make:page')]
 class PageMakeCommand extends ResourceGeneratorCommand

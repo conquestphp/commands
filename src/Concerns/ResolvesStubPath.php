@@ -4,7 +4,7 @@ namespace Conquest\Assemble\Concerns;
 
 trait ResolvesStubPath
 {
-     /**
+    /**
      * Resolve the fully-qualified path to the stub.
      *
      * @param  string  $stub

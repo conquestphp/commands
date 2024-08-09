@@ -2,14 +2,13 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Illuminate\Support\Str;
-use Illuminate\Console\GeneratorCommand;
 use Conquest\Assemble\Concerns\ResolvesStubPath;
+use Illuminate\Console\GeneratorCommand;
+use Illuminate\Support\Str;
 
 abstract class ResourceGeneratorCommand extends GeneratorCommand
 {
     use ResolvesStubPath;
-
 
     /**
      * Execute the console command.
@@ -62,7 +61,8 @@ abstract class ResourceGeneratorCommand extends GeneratorCommand
         $name = Str::replaceFirst($this->rootNamespace(), '', $name);
         $extension = config('assemble.extension', 'vue');
         $name = trim(trim($name, $extension), '.');
-        return resource_path(trim($this->rootNamespace(), '/') . '/' . str_replace('\\', '/', $name) . '.' . $extension);
+
+        return resource_path(trim($this->rootNamespace(), '/').'/'.str_replace('\\', '/', $name).'.'.$extension);
     }
 
     /**
@@ -103,9 +103,8 @@ abstract class ResourceGeneratorCommand extends GeneratorCommand
         return [
             'name' => [
                 'What should the '.strtolower($this->type).' be named?',
-                'E.g. UserEdit'
+                'E.g. UserEdit',
             ],
         ];
     }
-
 }

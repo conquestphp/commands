@@ -12,6 +12,6 @@ class {{ class }}
 {
     {{ invoke }}
     {
-        return {{ response }};
+        {{ response }};
     }
 }

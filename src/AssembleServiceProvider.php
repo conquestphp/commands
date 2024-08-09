@@ -3,7 +3,7 @@
 namespace Conquest\Assemble;
 
 use Conquest\Assemble\Console\Commands\ComponentMakeCommand;
-use Conquest\Assemble\Console\Commands\ConquestMakeCommand;
+use Conquest\Assemble\Console\Commands\ConquestCommand;
 use Conquest\Assemble\Console\Commands\ModalMakeCommand;
 use Conquest\Assemble\Console\Commands\PageMakeCommand;
 use Conquest\Assemble\Console\Commands\RouteMakeCommand;
@@ -26,7 +26,7 @@ class AssembleServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                ConquestMakeCommand::class,
+                ConquestCommand::class,
                 PageMakeCommand::class,
                 ModalMakeCommand::class,
                 ComponentMakeCommand::class,
@@ -47,7 +47,7 @@ class AssembleServiceProvider extends ServiceProvider
     public function provides()
     {
         return [
-            ConquestMakeCommand::class,
+            ConquestCommand::class,
             PageMakeCommand::class,
             ModalMakeCommand::class,
             ComponentMakeCommand::class,

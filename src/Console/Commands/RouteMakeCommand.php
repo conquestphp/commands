@@ -146,7 +146,7 @@ class RouteMakeCommand extends Command
         return $stub;
     }
 
-        /**
+    /**
      * Get the HTTP method for the route.
      * 
      * @param  string  $method
@@ -216,6 +216,7 @@ class RouteMakeCommand extends Command
     {
         $controller = $this->getControllerInput();
         $file = $this->getFileInput();
+        dd($this->getMethodName($controller));
 
         if (!file_exists($file)) {
             $this->components->error(sprintf('Route file [%s] does not exist.', $file));

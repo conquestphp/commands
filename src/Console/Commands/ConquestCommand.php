@@ -14,8 +14,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 use function Laravel\Prompts\multiselect;
 
-#[AsCommand(name: 'make:conquest')]
-class ConquestMakeCommand extends GeneratorCommand
+#[AsCommand(name: 'conquest')]
+class ConquestCommand extends GeneratorCommand
 {
     use HasNames;
     use IsInertiable;
@@ -33,7 +33,7 @@ class ConquestMakeCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $name = 'make:conquest';
+    protected $name = 'conquest';
 
     /**
      * The console command description.

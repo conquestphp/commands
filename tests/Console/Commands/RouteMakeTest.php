@@ -5,12 +5,10 @@ use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function () {
     $this->web = base_path('routes/web.php');
-    // Create a temporary web.php file for testing
     File::put($this->web, "<?php\n\nuse Illuminate\Support\Facades\Route;\n");
 });
 
 afterEach(function () {
-    // Clean up the temporary web.php file after each test
     if (File::exists($this->web)) {
         File::delete($this->web);
     }

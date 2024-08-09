@@ -25,7 +25,12 @@ trait HasMethods
      */
     public function isValidMethod($method)
     {
-        return in_array($method, $this->methods);
+        return in_array(
+            strtolower($method),
+            collect($this->methods)
+                ->transform(fn ($name) => strtolower($name))
+                ->all()
+        );
     }
 
     /**

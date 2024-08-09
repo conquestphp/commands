@@ -2,22 +2,28 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
+use Conquest\Assemble\Concerns\HasMethods;
+use Illuminate\Support\Str;
 use Conquest\Assemble\Concerns\HasNames;
+use Illuminate\Console\GeneratorCommand;
+use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\text;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
+
 use Conquest\Assemble\Concerns\IsInertiable;
 use Conquest\Assemble\Concerns\ResolvesStubPath;
-use Illuminate\Console\GeneratorCommand;
-use Illuminate\Support\Str;
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
-use function Laravel\Prompts\multiselect;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'conquest')]
 class ConquestCommand extends GeneratorCommand
 {
-    use HasNames;
+    use HasMethods;
     use IsInertiable;
     use ResolvesStubPath;
 
@@ -53,6 +59,26 @@ class ConquestCommand extends GeneratorCommand
     }
 
     /**
+     * Get the desired class name from the input.
+     *
+     * @return string
+     */
+    protected function getMethodInput()
+    {
+        $name = trim($this->argument('method'));
+
+        return str($name)->lower()->ucfirst()->toString();
+    }
+
+    protected function getArguments()
+    {
+        return [
+            ['name', InputArgument::REQUIRED, 'The name of the controller to generate.'],
+            ['method', InputArgument::OPTIONAL, 'The method of the controller to generate.'],
+        ];
+    }
+
+    /**
      * Get the console command arguments.
      *
      * @return array
@@ -61,17 +87,22 @@ class ConquestCommand extends GeneratorCommand
     {
         return [
             ['force', null, InputOption::VALUE_NONE, 'Create the class(es) even if they already exist'],
+
             ['modal', 'M', InputOption::VALUE_NONE, 'Create a new modal for the endpoint'],
             ['page', 'P', InputOption::VALUE_NONE, 'Create a new page for the endpoint'],
             ['form', 'F', InputOption::VALUE_NONE, 'Indicates whether the generated page or modal should be a form'],
+
             ['model', 'm', InputOption::VALUE_NONE, 'Create a new model'],
             ['policy', 'p', InputOption::VALUE_NONE, 'Create a new policy for the model'],
-            ['migration', 'g', InputOption::VALUE_NONE, 'Create a new migration file for the model'],
+            ['migration', 'i', InputOption::VALUE_NONE, 'Create a new migration file for the model'],
             ['seed', 's', InputOption::VALUE_NONE, 'Create a new seeder for the model'],
             ['factory', 'f', InputOption::VALUE_NONE, 'Create a new factory for the model'],
             ['resource', 'r', InputOption::VALUE_NONE, 'Create a new resource for the model'],
+
+            // ['model', 'g', InputOption::VALUE_NONE, 'Indicates whether to generate any created routes with the model'],
             ['crud', 'c', InputOption::VALUE_NONE, 'Generate endpoints for CRUD operations'],
-            ['web', 'w', InputOption::VALUE_NONE, 'Indicates whether the generated controller should be added to the web.php or specified route file'],
+            ['route', 'R', InputOption::VALUE_NONE, 'Indicates whether the generated controller should be added to the route.php or specified route file'],
+            ['file', 'W', InputOption::VALUE_OPTIONAL, 'Supply the file to create the route routes in'],
             ['all', 'a', InputOption::VALUE_NONE, 'Generate a model, policy, migration, seeder, factory, resource, pages/modals and 8 endpoints which are added to the routes'],
         ];
     }
@@ -87,7 +118,6 @@ class ConquestCommand extends GeneratorCommand
     {
         if ($this->isReservedName($this->getNameInput())) {
             $this->components->error('The name "'.$this->getNameInput().'" is reserved by PHP.');
-
             return false;
         }
 
@@ -99,14 +129,22 @@ class ConquestCommand extends GeneratorCommand
             $this->input->setOption('policy', true);
             $this->input->setOption('resource', true);
             $this->input->setOption('crud', true);
-            $this->input->setOption('web', true);
+            $this->input->setOption('route', true);
         }
 
-        [$name, $method] = $this->parseName($this->getNameInput());
+        $name = $this->getPureClassName($this->getNameInput());
+        $method = $this->getMethodInput();
+        
+        if ((! $method || $this->isValidMethod($method)) && ! $this->option('crud')) {
+            $this->components->warn('You have not supplied a valid method.');
+            if (! confirm('Are you sure you want to proceed? This will limit some of the functionality available.')) {
+                return false;
+            }
+        }
 
         if ($this->option('model')) {
             $this->call('make:model', [
-                'name' => $this->getClassName($name),
+                'name' => last(explode('/', $name)),
                 '--force' => $this->option('force'),
                 '--factory' => $this->option('factory'),
                 '--seed' => $this->option('seed'),
@@ -132,12 +170,6 @@ class ConquestCommand extends GeneratorCommand
             if (! $this->createConquest($name, $method)) {
                 return false;
             }
-        }
-
-        if ($this->option('web')) {
-            // If web is applied, use the generated controllers and add it into web.php
-            // Or the specified argument value inside routes/
-            // $this->createRoutes($name, $method);
         }
 
         $this->components->success('All Conquest components created successfully.');
@@ -178,7 +210,15 @@ class ConquestCommand extends GeneratorCommand
         return [
             'name' => [
                 'What argument should be used as the generator for this conquest command?',
-                'E.g. UserEdit',
+                'E.g. User',
+            ],
+            'method' => [
+                'What methods should be used for this conquest command? (Select multiple if needed)',
+                'Available options: index, create, store, show, edit, update, destroy',
+                fn () => select(
+                    'Select methods:',
+                    ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']
+                ),
             ],
         ];
     }
@@ -353,16 +393,6 @@ class ConquestCommand extends GeneratorCommand
         };
     }
 
-    protected function createRoutes($name, $method)
-    {
-        // Only uses the name. Removes pluralization.
-        // Route::get(Controller::class)->name('name.method')
-        // $this->call('make:route', [
-        //     'name' => $this->getResource($name, $method),
-        //     '--force' => $this->option('force'),
-        // ]);
-    }
-
     /**
      * Interact further with the user if they were prompted for missing arguments.
      *
@@ -377,17 +407,36 @@ class ConquestCommand extends GeneratorCommand
         collect(multiselect('Would you like any of the following?', [
             'all' => 'All',
             'crud' => 'CRUD',
-            'web' => 'Web Route(s)',
-            'model' => 'Model',
-            'page' => 'Page',
-            'modal' => 'Modal',
-            'form' => 'As form',
-            'seed' => 'Database Seeder',
-            'factory' => 'Factory',
-            'migration' => 'Migration',
-            'policy' => 'Policy',
-            'resource' => 'API Resource',
             'force' => 'Force creation',
+            'model' => 'Model',
+            'route' => 'Web Route(s)',
         ]))->each(fn ($option) => $input->setOption($option, true));
+
+        if ($input->getOption('all')) {
+            return;
+        }        
+
+        if ($input->getOption('model')) {
+            collect(multiselect('Would you like to additionally create any of the following for the given model?', [
+                'factory' => 'Factory',
+                'migration' => 'Migration',
+                'policy' => 'Policy',
+                'resource' => 'Resource',
+                'seed' => 'Seeder',
+            ]))->each(fn ($option) => $input->setOption($option, true));
+        }
+
+        if (true) {
+            collect(multiselect('Would you like change the behaviour of the generated Javascript resource?', [
+                'page' => 'Page',
+                'modal' => 'Modal',
+                'form' => 'As form',
+            ]))->each(fn ($option) => $input->setOption($option, true));
+        }
+
+        if ($this->option('route')) {
+            $route = text('What route file would you like to add the generated routes to?');
+            $input->setOption('file', $route);
+        }
     }
 }

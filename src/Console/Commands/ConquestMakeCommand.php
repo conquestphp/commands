@@ -353,6 +353,16 @@ class ConquestMakeCommand extends GeneratorCommand
         };
     }
 
+    protected function createRoutes($name, $method)
+    {
+        // Only uses the name. Removes pluralization.
+        // Route::get(Controller::class)->name('name.method')
+        // $this->call('make:route', [
+        //     'name' => $this->getResource($name, $method),
+        //     '--force' => $this->option('force'),
+        // ]);
+    }
+
     /**
      * Interact further with the user if they were prompted for missing arguments.
      *

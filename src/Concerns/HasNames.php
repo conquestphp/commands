@@ -136,14 +136,13 @@ trait HasNames
      */
     public function getControllerNamespace($name, $method)
     {
-        $namespace = $this->getNamespace($name).'App\\Http\\Controllers\\';
         $controllerName = $this->getController($name, $method);
         $controllerPath = str_replace('\\', '/', $controllerName);
         $controllerParts = explode('/', $controllerPath);
         $className = array_pop($controllerParts);
         $subNamespace = implode('\\', $controllerParts);
 
-        return $namespace.($subNamespace ? $subNamespace.'\\' : '').$className;
+        return 'App\\Http\\Controllers\\'.($subNamespace ? $subNamespace.'\\' : '').$className;
     }
 
     /**

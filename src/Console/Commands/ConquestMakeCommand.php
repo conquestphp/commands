@@ -2,10 +2,11 @@
 
 namespace Conquest\Assemble\Console\Commands;
 
-use Conquest\Assemble\Concerns\HasNames;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
+use Conquest\Assemble\Concerns\HasNames;
 use Illuminate\Console\GeneratorCommand;
+use Conquest\Assemble\Concerns\IsInertiable;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Illuminate\Console\Concerns\CreatesMatchingTest;
@@ -14,6 +15,7 @@ use Illuminate\Console\Concerns\CreatesMatchingTest;
 class ConquestMakeCommand extends GeneratorCommand
 {
     use HasNames;
+    use IsInertiable;
 
     /**
      * The type of class being generated.
@@ -56,7 +58,7 @@ class ConquestMakeCommand extends GeneratorCommand
     {
         return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
                         ? $customPath
-                        : __DIR__.$stub;
+                        : __DIR__.'/../../..'.$stub;
     }
 
     /**
@@ -130,7 +132,7 @@ class ConquestMakeCommand extends GeneratorCommand
         }
 
         if ($this->option('crud')) {
-            foreach(self::METHODS as $method) {
+            foreach($this->methods as $method) {
                 if (!$this->createConquest($name, $method)) {
                     return false;
                 }
@@ -164,13 +166,14 @@ class ConquestMakeCommand extends GeneratorCommand
     protected function buildConquestClass($name, $method)
     {
         $stub = $this->files->get($this->getStub());
-        return $this->replaceNamespace($stub, $name)
-            ->replaceRequest($stub, $name, $method)
+        return $this->replaceNamespace($stub, $this->getControllerNamespace($name, $method))
+            ->replaceRequest($stub, $this->getRequestNamespace($name, $method))
             ->replaceInertia($stub, $name)
-            ->replaceModel($stub, $name)
+            ->replaceModel($stub, $this->getModelNamespace($name))
             ->replaceInvoke($stub, $name, $method)
             ->replaceResponse($stub, $name, $method)
-            ->replaceClass($stub, $this->getFullName($this->getClassName($name), $method));
+            ->replaceEmptyLines($stub)
+            ->replaceClass($stub, $this->getController($this->getClassName($name), $method));
     }
 
     /**
@@ -192,80 +195,14 @@ class ConquestMakeCommand extends GeneratorCommand
      * Replace the request import to use the generated request.
      *
      * @param  string  $stub
-     * @param  string  $name
      * @param  ?string  $method
      * @return static
      */
-    protected function replaceRequest(&$stub, $name, $method): static
+    protected function replaceRequest(&$stub, $name)
     {
-        $stub = str_replace(['DummyRequest', '{{ request }}', '{{request}}'], $this->getRequestNamespace($name, $method), $stub);
+        $stub = str_replace(['DummyRequest', '{{ request }}', '{{request}}'], $name, $stub);
 
         return $this;
-    }
-
-    protected function getModalByDefaultMethods()
-    {
-        return [
-            'Delete'
-        ];
-    }
-
-    protected function getPageByDefaultMethods()
-    {
-        return [
-            'Index',
-            'Show',
-            'Create',
-            'Edit',
-        ];
-    }
-
-    /**
-     * Checks whether the method renders a modal by default.
-     *
-     * @param  string  $method
-     * @return bool
-     */
-    protected function isModalMethod($method): bool
-    {
-        return in_array(
-            strtolower($method),
-            collect($this->getModalByDefaultMethods())
-                ->transform(fn ($method) => strtolower($method))
-                ->all()
-        );
-    }
-
-    /**
-     * Checks whether the method renders a page by default.
-     *
-     * @param  string  $method
-     * @return bool
-     */
-    protected function isPageMethod($method): bool
-    {
-        return in_array(
-            strtolower($method),
-            collect($this->getPageByDefaultMethods())
-                ->transform(fn ($method) => strtolower($method))
-                ->all()
-        );
-    }
-
-    /**
-     * Checks whether the given name is reserved.
-     *
-     * @param  string  $name
-     * @return bool
-     */
-    protected function isInertiaMethod($method): bool
-    {
-        return in_array(
-            strtolower($method),
-            collect(array_merge($this->getPageByDefaultMethods(), $this->getModalByDefaultMethods()))
-                ->transform(fn ($method) => strtolower($method))
-                ->all()
-        );
     }
 
     /**
@@ -275,9 +212,9 @@ class ConquestMakeCommand extends GeneratorCommand
      * @param  string  $method
      * @return static
      */
-    protected function replaceInertia(&$stub, $method): static
+    protected function replaceInertia(&$stub, $method)
     {
-        if ($this->isInertiaMethod($method)) {
+        if (!$this->isNotInertiable($method)) {
             $stub = str_replace(['{{ inertia }}', '{{inertia}}'], 'use Inertia\Inertia;', $stub);
         } else {
             $stub = str_replace(['{{ inertia }}', '{{inertia}}'], '', $stub);
@@ -293,14 +230,13 @@ class ConquestMakeCommand extends GeneratorCommand
      * @param  string  $method
      * @return static
      */
-    protected function replaceModel(&$stub, $name): static
+    protected function replaceModel(&$stub, $name)
     {
         if ($this->option('model')) {
-            $stub = str_replace(['{{ model }}', '{{model}}'], 'use ' . $this->getModelNamespace($name) . ';', $stub);
+            $stub = str_replace(['{{ model }}', '{{model}}'], 'use ' . $name . ';', $stub);
         } else {
             $stub = str_replace(['{{ model }}', '{{model}}'], '', $stub);
         }
-
         return $this;
     }
 
@@ -312,9 +248,9 @@ class ConquestMakeCommand extends GeneratorCommand
      * @param  ?string  $method
      * @return static
      */
-    protected function replaceInvoke(&$stub, $name, $method): static
+    protected function replaceInvoke(&$stub, $name, $method)
     {
-        $request = $this->getRequest($name, $method);
+        $request = $this->getClassName($this->getRequest($name, $method));
 
         if ($this->option('model')) {
             $model = $this->getModel($name);
@@ -334,19 +270,31 @@ class ConquestMakeCommand extends GeneratorCommand
      * @param  ?string  $method
      * @return static
      */
-    protected function replaceResponse(&$stub, $name, $method): static
+    protected function replaceResponse(&$stub, $name, $method)
     {
         $model = $this->getModel($name);
-        $props = $this->option('model') ? $model . ' => $' . Str::camel($model) . ",\n]" : '';
+        $props = $this->option('model') ? Str::camel($model) . ' => $' . $model .',': '';
         $resource = $this->getResource($name, $method);
 
-        if ($this->isPageMethod($name)) {
-            $stub = str_replace(['{{ response }}', '{{response}}'], "return Inertia::render('" . $resource . "', [\n\t'" . $props . ",\n]);",  $stub);
-        } else if ($this->isModalMethod($name)) {
-            $stub = str_replace(['{{ response }}', '{{response}}'], "return Inertia::modal('" . $resource . "', [\n\t'" . $props . ",\n])->baseRoute('" . config('assemble.base_route') . "');",  $stub);
+        if ($this->isPage($method) || ($this->option('page') && !$this->isNotInertiable($method))) {
+            $stub = str_replace(['{{ response }}', '{{response}}'], "return Inertia::render('" . $resource . "', [\n\t\t\t" . $props . "\n\t\t]);",  $stub);
+        } else if ($this->isModal($method) || ($this->option('modal') && !$this->isNotInertiable($method))) {
+            $stub = str_replace(['{{ response }}', '{{response}}'], "return Inertia::modal('" . $resource . "', [\n\t\t\t" . $props . "\n\t\t])->baseRoute('" . config('assemble.base_route') . "');",  $stub);
         } else {
             $stub = str_replace(['{{ response }}', '{{response}}'], 'return back();',  $stub);
         }
+        return $this;
+    }
+
+    /**
+     * Replace empty lines with a single line.
+     * 
+     * @param  string  $stub
+     * @return static
+     */
+    protected function replaceEmptyLines(&$stub)
+    {
+        $stub = str_replace("\r\n\r\n\r\n", "\r\n\r\n", $stub);
         return $this;
     }
 
@@ -371,10 +319,6 @@ class ConquestMakeCommand extends GeneratorCommand
         $this->makeDirectory($path);
         $this->files->put($path, $this->sortImports($this->buildConquestClass($name, $method)));
 
-        if (in_array(CreatesMatchingTest::class, class_uses_recursive($this))) {
-            $this->handleTestCreation($path);
-        }
-
         if (windows_os()) {
             $path = str_replace('/', '\\', $path);
         }
@@ -386,28 +330,28 @@ class ConquestMakeCommand extends GeneratorCommand
             '--force' => $this->option('force'),
         ]);
 
-        if ($this->option('page')) {
-            $this->call('make:page', [
+        return match(true) {
+            $this->option('page') && !$this->isNotInertiable($method) => $this->call('make:page', [
                 'name' => $this->getResource($name, $method),
                 '--force' => $this->option('force'),
-            ]);
-        } else if ($this->option('modal')) {
-            $this->call('make:modal', [
+                '--form' => $this->isForm($method),
+            ]),
+            $this->option('modal') && !$this->isNotInertiable($method) => $this->call('make:modal', [
                 'name' => $this->getResource($name, $method),
                 '--force' => $this->option('force'),
-            ]);
-        } else if ($this->isPageMethod($name)) {
-            $this->call('make:page', [
+                '--form' => $this->isForm($method),
+            ]),
+            $this->isPage($name) => $this->call('make:page', [
                 'name' => $this->getResource($name, $method),
                 '--force' => $this->option('force'),
-            ]);
-        } else if ($this->isModalMethod($name)) {
-            $this->call('make:modal', [
+                '--form' => $this->isForm($method),
+            ]),
+            $this->isModal($name) => $this->call('make:modal', [
                 'name' => $this->getResource($name, $method),
                 '--force' => $this->option('force'),
-            ]);
-        }
-
-        return true;
+                '--form' => $this->isForm($method),
+            ]),
+            default => true,
+        };
     }
 }

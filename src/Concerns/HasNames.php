@@ -4,7 +4,7 @@ namespace Conquest\Assemble\Concerns;
 
 trait HasNames
 {
-    public const METHODS = [
+    public $methods = [
         'Index',
         'Show',
         'Create',
@@ -36,13 +36,23 @@ trait HasNames
         $name .= '/' . implode('', $words);
 
         // Add back the final word to the name if it is not a method
-        if (!in_array($finalWord, self::METHODS)) {
+        if (!in_array($finalWord, $this->methods)) {
             $name .= $finalWord;
         }
 
         // Check if the final word is in methods, remove it as give it as the type
-        $method = in_array($finalWord, self::METHODS) ? $finalWord : null;
+        $method = in_array($finalWord, $this->methods) ? $finalWord : null;
         return [$name, $method];
+    }
+
+    // protected function getNamespace($name)
+    // {
+    //     return trim(implode('\\', array_slice(explode('\\', $this->toNamespace($name)), 0, -1)), '\\');
+    // }
+
+    public function toNamespace($name)
+    {
+        return str_replace('/', '\\', $name);
     }
 
     /**
@@ -93,7 +103,7 @@ trait HasNames
      */
     public function getRequestNamespace($name, $method)
     {
-        return $this->getNamespace($name) . 'Http\\Requests\\' . $this->getRequest($name, $method);
+        return $this->getNamespace($name) . 'App\\Http\\Requests\\' . $this->toNamespace($this->getRequest($name, $method));
     }
 
     /**
@@ -117,7 +127,7 @@ trait HasNames
      */
     public function getControllerNamespace($name, $method)
     {
-        return $this->getNamespace($name) . 'Http\\Controllers\\' . $this->getController($name, $method);
+        return $this->getNamespace($name) . 'App\\Http\\Controllers\\' . $this->getController($name, $method);
     }
 
     /**

@@ -6,17 +6,13 @@ use Illuminate\Support\Str;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
-use Conquest\Assemble\Concerns\HasNames;
 use Illuminate\Console\GeneratorCommand;
 use function Laravel\Prompts\multiselect;
 use Conquest\Assemble\Concerns\HasMethods;
-
-use Conquest\Assemble\Concerns\IsInertiable;
 use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
@@ -25,7 +21,6 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 class ConquestCommand extends GeneratorCommand
 {
     use HasMethods;
-    use IsInertiable;
     use ResolvesStubPath;
 
     /**

@@ -7,8 +7,9 @@ use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
 
-class RouteAddCommand extends Command
+class RouteAddCommand extends Command implements PromptsForMissingInput
 {
     use HasMethods;
 

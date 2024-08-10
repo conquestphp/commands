@@ -1,11 +1,12 @@
 <?php
 
-namespace Dyrynda\Artisan\Console\Commands;
+namespace Conquest\Assemble\Commands;
 
 use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use function Laravel\Prompts\text;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use function Laravel\Prompts\multiselect;
 use Symfony\Component\Console\Input\InputOption;
@@ -13,9 +14,10 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
 
-#[AsCommand(name: 'make:user')]
-class UserMakeCommand extends Command
+#[AsCommand(name: 'user:make')]
+class UserMakeCommand extends Command implements PromptsForMissingInput
 {
         /**
      * The console command name.
@@ -23,7 +25,7 @@ class UserMakeCommand extends Command
      * @var string
      */
 
-    protected $name = 'make:user';
+    protected $name = 'user:make';
 
     /**
      * The console command description.
@@ -85,7 +87,7 @@ class UserMakeCommand extends Command
     {
         return [
             ['admin', 'a', InputOption::VALUE_NONE, 'Indicate that the user should be root'],
-            ['verify', 'v', InputOption::VALUE_NONE, 'Indicate that the email is verified'],
+            ['verify', 'e', InputOption::VALUE_NONE, 'Indicate that the email is verified'],
             ['role', 'r', InputOption::VALUE_OPTIONAL, 'Supply a role according to your definition'],
         ];
     }
@@ -142,7 +144,6 @@ class UserMakeCommand extends Command
         }
     }
 
-
     /**
      * Execute the console command.
      *
@@ -151,13 +152,25 @@ class UserMakeCommand extends Command
      */
     public function handle()
     {
+        if (!$this->validateName($name = $this->getNameInput())) {
+            $this->components->error(sprintf('The name provided [%s] is invalid.', $name));
+            return false;
+        }
+
         if (!$this->validateEmail($email = $this->getEmailInput())) {
             $this->components->error(sprintf('The email [%s] is invalid or already exists.', $email));
             return false;
         }
 
+        if (!$this->validatePassword($password = $this->getPasswordInput())) {
+            $this->components->error(sprintf('The password provided [%s] is invalid.', $password));
+            return false;
+        }
+
+
+
         try {
-            
+            $this->createUser($name,  $email,  $password);
         } catch (Exception $e) {
             $this->components->error(sprintf('There was an issue committing user [%s].', $email));
             return false;
@@ -165,6 +178,30 @@ class UserMakeCommand extends Command
 
         $this->components->info(sprintf('User [%s] created successfully.', $email));
         return true;
+    }
+
+    /**
+     * Determine if the name is valid.
+     *
+     * @param  string  $name
+     * @return bool
+     *
+     */
+    protected function validateName($name)
+    {
+        return true;
+    }
+
+    /**
+     * Determine if the password is valid.
+     *
+     * @param  string  $password
+     * @return bool
+     *
+     */
+    protected function validatePassword($password)
+    {
+        return strlen($password) >= 8;
     }
 
     /**
@@ -183,6 +220,8 @@ class UserMakeCommand extends Command
         return ! $this->getUserModel()::where('email', $email)->exists();
     }
 
+    
+
     /**
      * Get the user model.
      *
@@ -198,7 +237,7 @@ class UserMakeCommand extends Command
         $required = [
             'name' => $name,
             'email' => $email,
-            'password' => Password::make($password),
+            'password' => Hash::make($password),
             'email_verified_at' => $this->option('verify') ? now() : null,
             'created_at' => now(),
         ];

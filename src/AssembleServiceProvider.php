@@ -7,6 +7,7 @@ use Conquest\Assemble\Commands\ConquestMakeCommand;
 use Conquest\Assemble\Commands\ModalMakeCommand;
 use Conquest\Assemble\Commands\PageMakeCommand;
 use Conquest\Assemble\Commands\RouteAddCommand;
+use Conquest\Assemble\Commands\UserMakeCommand;
 use Illuminate\Support\ServiceProvider;
 
 class AssembleServiceProvider extends ServiceProvider
@@ -25,6 +26,7 @@ class AssembleServiceProvider extends ServiceProvider
                 ModalMakeCommand::class,
                 ComponentMakeCommand::class,
                 RouteAddCommand::class,
+                UserMakeCommand::class,
             ]);
         }
     }

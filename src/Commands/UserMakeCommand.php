@@ -9,18 +9,21 @@ use function Laravel\Prompts\text;
 use Illuminate\Support\Facades\Password;
 use function Laravel\Prompts\multiselect;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'make:user')]
 class UserMakeCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
+        /**
+     * The console command name.
      *
      * @var string
      */
-    protected $signature = 'make:user';
+
+    protected $name = 'make:user';
 
     /**
      * The console command description.
@@ -29,6 +32,11 @@ class UserMakeCommand extends Command
      */
     protected $description = 'Create a new user';
 
+    /**
+     * Get the console command arguments.
+     *
+     * @return array
+     */
     protected function getArguments()
     {
         return [
@@ -38,16 +46,31 @@ class UserMakeCommand extends Command
         ];
     }
 
+    /**
+     * Get the desired user name from the input.
+     *
+     * @return string
+     */
     protected function getNameInput()
     {
         return trim($this->argument('name'));
     }
 
+    /**
+     * Get the desired user email from the input.
+     *
+     * @return string
+     */
     protected function getEmailInput()
     {
         return trim($this->argument('email'));
     }
 
+    /**
+     * Get the desired user password from the input.
+     *
+     * @return string
+     */
     protected function getPasswordInput()
     {
         return trim($this->argument('password'));
@@ -105,7 +128,14 @@ class UserMakeCommand extends Command
             'verify' => 'Verify email',
             'admin' => 'Make admin',
             'role' => 'Specify role',
-        ]))->each(fn ($option) => $option === 'role' ? $role = true : $input->setOption($option, true));
+        ]))->each(function ($option) use (&$role, $input) {
+            if ($option === 'role') {
+                $role = true;
+            } else {
+                $input->setOption($option, true);
+            }
+        });
+
         if ($role) { 
             $role = text('What role value would you like to give this user?');
             $input->setOption('role', $role);
@@ -135,22 +165,6 @@ class UserMakeCommand extends Command
 
         $this->components->info(sprintf('User [%s] created successfully.', $email));
         return true;
-
-    }
-
-    protected function createUser($name, $email, $password)
-    {
-        $required = [
-            'name' => $name,
-            'email' => $email,
-            'password' => Password::make($password),
-            'email_verified_at' => $this->option('verify') ? now() : null,
-            'created_at' => now(),
-        ];
-
-        return $this->getUserModel()::create(array_merge(
-            $required,
-        ));
     }
 
     /**
@@ -177,5 +191,53 @@ class UserMakeCommand extends Command
     protected function getUserModel()
     {
         return Str::replace('::class', '', config('auth.providers.users.model'));
+    }
+
+    protected function createUser($name, $email, $password)
+    {
+        $required = [
+            'name' => $name,
+            'email' => $email,
+            'password' => Password::make($password),
+            'email_verified_at' => $this->option('verify') ? now() : null,
+            'created_at' => now(),
+        ];
+
+        return $this->getUserModel()::create(array_merge(
+            $this->option('admin') ? $this->asAdmin() : [],
+            $this->option('role') ? $this->asRole() : [],
+            $this->extraAttributes(),
+            $required,
+        ));
+    }
+
+    /**
+     * Override function allowing for admin options to be set.
+     * 
+     * @return array<string, string>
+     */
+    protected function asAdmin()
+    {
+        return [];
+    }
+
+    /**
+     * Override function allowing for admin options to be set.
+     * 
+     * @return array<string, string>
+     */
+    protected function asRole()
+    {
+        return [];
+    }
+
+    /**
+     * Override function allowing for extra attributes to be set.
+     * 
+     * @return array<string, string>
+     */
+    protected function extraAttributes()
+    {
+        return [];
     }
 }

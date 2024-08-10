@@ -29,12 +29,13 @@ This is the contents of the published config file:
 return [
     'extension' => 'vue',
     'paths' => [
-        'page' => resource_path('js/Pages'),
-        'modal' => resource_path('js/Modals'),
-        'lib' => resource_path('js/Lib'),
-        'component' => resource_path('js/Components'),
-    ]
+        'page' => 'js/Pages',
+        'modal' => 'js/Modals',
+        'component' => 'js/Components',
+    ],
+    'base_route' => 'dashboard',
 ];
+
 ```
 
 You should also publish the stubs to customise them:

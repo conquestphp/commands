@@ -1,9 +1,8 @@
 <?php
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Artisan;
 use Conquest\Assemble\Concerns\HasMethods;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 class Helper
 {
@@ -19,13 +18,13 @@ function toPath(string $class, string $method, string $type): string
         'Request', 'request', 'r' => app_path('Http/Requests/'.$class.$method.'Request.php'),
         'Page', 'page', 'P' => resource_path('js/Pages/'.$class.$method.'.vue'),
         'Modal', 'modal', 'M' => resource_path('js/Modals/'.$class.$method.'.vue'),
-        'Model', 'model', 'm' => app_path('Models/'.(new Helper())->getBase($class).'.php'),
+        'Model', 'model', 'm' => app_path('Models/'.(new Helper)->getBase($class).'.php'),
         default => $class.$method
     };
 }
 
 beforeEach(function () {
-    $this->helper = new Helper();
+    $this->helper = new Helper;
     $this->web = app()->basePath('routes/web.php');
     File::put($this->web, "<?php\n\nuse Illuminate\Support\Facades\Route;\n");
 });
@@ -53,7 +52,6 @@ it('can create a conquest endpoint which uses a valid method', function () {
     expect(File::exists(toPath($name, $method, 'r')))->toBeTrue();
 });
 
-
 it('can create CRUD', function () {
     $success = Artisan::call('make:conquest', [
         'name' => $name = 'Conquest/User',
@@ -65,7 +63,7 @@ it('can create CRUD', function () {
     collect($this->helper->methods)->each(function ($method) use ($name) {
         if ($this->helper->hasPage($method)) {
             expect(File::exists(toPath($name, $method, 'P')))->toBeTrue();
-        } else if ($this->helper->hasModal($method)) {
+        } elseif ($this->helper->hasModal($method)) {
             expect(File::exists(toPath($name, $method, 'M')))->toBeTrue();
         }
 
@@ -101,7 +99,7 @@ it('can do all', function () {
     collect($this->helper->methods)->each(function ($method) use ($name) {
         if ($this->helper->hasPage($method)) {
             expect(File::exists(toPath($name, $method, 'P')))->toBeTrue();
-        } else if ($this->helper->hasModal($method)) {
+        } elseif ($this->helper->hasModal($method)) {
             expect(File::exists(toPath($name, $method, 'M')))->toBeTrue();
         }
 
@@ -116,7 +114,7 @@ it('can change the generated javascript resource', function () {
     $success = Artisan::call('make:conquest', [
         'name' => $name = 'Conquest/User',
         'method' => $method = 'Create',
-        '--modal' => true
+        '--modal' => true,
     ]);
 
     expect($success)->toBeTruthy();

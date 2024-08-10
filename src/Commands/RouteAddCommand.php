@@ -6,6 +6,7 @@ use Conquest\Assemble\Concerns\HasMethods;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Support\Str;
+use Illuminate\Support\Stringable;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -171,33 +172,38 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
         $parts = explode('/', $this->getPureClassName($controller));
         $end = array_pop($parts);
 
-        return trim(collect($parts)->map(fn (string $part) => str($part)->kebab()->singular())
+        return trim(collect($parts)
+            ->map(fn (string $part) => str($part)->kebab()->singular())
             ->push($this->getFinalRoutePart($end, $method))
-            ->implode('/'), '/'
-        );      
+            ->implode('/'), '/');
     }
 
     /**
      * Get the final route part.
-     * 
+     *
      * @param  string  $part
      * @param  string  $method
-     * @return string
+     * @return Stringable
      */
     protected function getFinalRoutePart($part, $method)
     {
-        if (!($scoped = $this->isScoped($method))) {
-            return strtolower($method) === 'create' ? 'create' : '';
+        if (! $this->isScoped($method)) {
+            return str($method)->lower()->when(
+                fn ($str) => $str->exactly('create'),
+                fn ($str) => $str,
+                fn ($str) => ''
+            );
         }
 
         return str($part)->singular()
-                ->when($this->option('model') && $scoped, 
-                    fn ($part) => $part->camel()->prepend('{')->append('}'),
-                    fn ($part) => $part->kebab()->singular()
-                )
-                ->when(strtolower($method) === 'create', fn ($part) => $part->append('/create'))
-                ->when(strtolower($method) === 'edit', fn ($part) => $part->append('/edit'))
-                ->when(strtolower($method) === 'delete', fn ($part) => $part->append('/delete'));
+            ->when($this->option('model'),
+                fn ($part) => $part->camel()->prepend('{')->append('}'),
+                fn ($part) => $part->kebab()->singular()
+            )
+            ->when(strtolower($method) === 'create', fn ($part) => $part->append('/create'))
+            ->when(strtolower($method) === 'edit', fn ($part) => $part->append('/edit'))
+            ->when(strtolower($method) === 'delete', fn ($part) => $part->append('/delete'));
+
     }
 
     protected function getRouteName($controller)

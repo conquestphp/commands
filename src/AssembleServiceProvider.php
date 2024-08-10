@@ -2,11 +2,11 @@
 
 namespace Conquest\Assemble;
 
-use Conquest\Assemble\Console\Commands\ComponentMakeCommand;
-use Conquest\Assemble\Console\Commands\ConquestCommand;
-use Conquest\Assemble\Console\Commands\ModalMakeCommand;
-use Conquest\Assemble\Console\Commands\PageMakeCommand;
-use Conquest\Assemble\Console\Commands\RouteAddCommand;
+use Conquest\Assemble\Commands\ComponentMakeCommand;
+use Conquest\Assemble\Commands\ConquestMakeCommand;
+use Conquest\Assemble\Commands\ModalMakeCommand;
+use Conquest\Assemble\Commands\PageMakeCommand;
+use Conquest\Assemble\Commands\RouteAddCommand;
 use Illuminate\Support\ServiceProvider;
 
 class AssembleServiceProvider extends ServiceProvider
@@ -17,6 +17,16 @@ class AssembleServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/assemble.php', 'assemble');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ConquestMakeCommand::class,
+                PageMakeCommand::class,
+                ModalMakeCommand::class,
+                ComponentMakeCommand::class,
+                RouteAddCommand::class,
+            ]);
+        }
     }
 
     /**
@@ -24,34 +34,14 @@ class AssembleServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                ConquestCommand::class,
-                PageMakeCommand::class,
-                ModalMakeCommand::class,
-                ComponentMakeCommand::class,
-                RouteAddCommand::class,
-            ]);
-        }
 
         $this->publishes([
-            __DIR__.'/../stubs' => base_path('stubs'),
-        ], 'conquest-stubs');
+            __DIR__.'/Commands/stubs' => base_path('stubs'),
+        ], 'stubs');
 
         $this->publishes([
             __DIR__.'/../config/assemble.php' => config_path('assemble.php'),
-        ], 'conquest-config');
+        ], 'config');
 
-    }
-
-    public function provides()
-    {
-        return [
-            ConquestCommand::class,
-            PageMakeCommand::class,
-            ModalMakeCommand::class,
-            ComponentMakeCommand::class,
-            RouteAddCommand::class,
-        ];
     }
 }

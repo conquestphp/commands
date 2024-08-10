@@ -22,11 +22,11 @@ afterEach(function () {
 
 it('can create a conquest endpoint which uses a valid method', function () {
 
-    // Artisan::call('conquest', [
-    //     'name' => 'Conquest/User',
-    //     'method' => 'Index',
-    //     '--force' => true,
-    // ]);
+    Artisan::call('make:conquest', [
+        'name' => 'Conquest/User',
+        'method' => 'Index',
+        '--force' => true,
+    ]);
 
     // $controller = base_path('app/Http/Controllers/Conquest/UserIndexController.php');
     // $request = base_path('app/Http/Requests/Conquest/UserIndexRequest.php');

@@ -1,15 +1,13 @@
 <?php
 
-namespace Conquest\Assemble\Console\Commands;
+namespace Conquest\Assemble\Commands;
 
-use Illuminate\Support\Str;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
 use Illuminate\Console\GeneratorCommand;
 use function Laravel\Prompts\multiselect;
 use Conquest\Assemble\Concerns\HasMethods;
-use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,11 +15,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
-#[AsCommand(name: 'conquest')]
-class ConquestCommand extends GeneratorCommand
+#[AsCommand(name: 'make:conquest')]
+class ConquestMakeCommand extends GeneratorCommand
 {
     use HasMethods;
-    use ResolvesStubPath;
 
     /**
      * The type of class being generated.
@@ -35,7 +32,7 @@ class ConquestCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $name = 'conquest';
+    protected $name = 'make:conquest';
 
     /**
      * The console command description.
@@ -52,6 +49,19 @@ class ConquestCommand extends GeneratorCommand
     protected function getStub()
     {
         return $this->resolveStubPath('/stubs/conquest.controller.stub');
+    }
+
+    /**
+     * Resolve the fully-qualified path to the stub.
+     *
+     * @param  string  $stub
+     * @return string
+     */
+    protected function resolveStubPath($stub)
+    {
+        return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
+                        ? $customPath
+                        : __DIR__.$stub;
     }
 
     /**
@@ -140,7 +150,6 @@ class ConquestCommand extends GeneratorCommand
         if ($this->option('model')) {
             $this->call('make:model', [
                 'name' => $this->getBase($name),
-                '--force' => $this->option('force'),
                 '--factory' => $this->option('factory'),
                 '--seed' => $this->option('seed'),
                 '--migration' => $this->option('migration'),
@@ -280,7 +289,7 @@ class ConquestCommand extends GeneratorCommand
      */
     protected function replaceInertia(&$stub, $method)
     {
-        if (! $this->isNotInertiable($method)) {
+        if (! $this->isResourceless($method)) {
             $stub = str_replace(['{{ inertia }}', '{{inertia}}'], 'use Inertia\Inertia;', $stub);
         } else {
             $stub = str_replace(['{{ inertia }}', '{{inertia}}'], '', $stub);
@@ -342,13 +351,11 @@ class ConquestCommand extends GeneratorCommand
         $props = $this->option('model') ? sprintf("'%s' => $%s", $c = str($model)->camel(), $c) : '';
         $resource = str($name)->append($method);
 
-        if ($this->isPage($method) || ($this->option('page') && ! $this->isNotInertiable($method))) {
-            $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::render('%s', [\n\t\t\t%s\n\t\t]);", $resource, $props), $stub);
-        } elseif ($this->isModal($method) || ($this->option('modal') && ! $this->isNotInertiable($method))) {
-            $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::modal('%s', [\n\t\t\t%s\n\t\t])->baseRoute(%s);", $resource, $props, config('assemble.base_route')), $stub);
-        } else {
-            $stub = str_replace(['{{ response }}', '{{response}}'], 'return back();', $stub);
-        }
+        match (true) {
+            $this->hasPage($method) || ($this->option('page') && ! $this->isResourceless($method)) => $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::render('%s', [\n\t\t\t%s\n\t\t]);", $resource, $props), $stub),
+            $this->hasModal($method) || ($this->option('modal') && ! $this->isResourceless($method)) => $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::modal('%s', [\n\t\t\t%s\n\t\t])->baseRoute(%s);", $resource, $props, config('assemble.base_route')), $stub),
+            default => $stub = str_replace(['{{ response }}', '{{response}}'], 'return back();', $stub),
+        };
 
         return $this;
     }
@@ -448,22 +455,22 @@ class ConquestCommand extends GeneratorCommand
             $this->option('page') && ! $this->isResourceless($method) => $this->call('make:page', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
-                '--form' => $this->isForm($method),
+                '--form' => $this->hasForm($method),
             ]),
             $this->option('modal') && ! $this->isResourceless($method) => $this->call('make:modal', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
-                '--form' => $this->isForm($method),
+                '--form' => $this->hasForm($method),
             ]),
             $this->hasPage($method) => $this->call('make:page', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
-                '--form' => $this->isForm($method),
+                '--form' => $this->hasForm($method),
             ]),
             $this->hasModal($method) => $this->call('make:modal', [
                 'name' => $resource,
                 '--force' => $this->option('force'),
-                '--form' => $this->isForm($method),
+                '--form' => $this->hasForm($method),
             ]),
             default => true,
         };

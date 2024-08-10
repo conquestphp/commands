@@ -1,6 +1,6 @@
 <?php
 
-namespace Conquest\Assemble\Console\Commands;
+namespace Conquest\Assemble\Commands;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -9,34 +9,34 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 use function Laravel\Prompts\multiselect;
 
-#[AsCommand(name: 'make:modal')]
-class ModalMakeCommand extends ResourceGeneratorCommand
+#[AsCommand(name: 'make:page')]
+class PageMakeCommand extends ResourceGeneratorCommand
 {
-    protected $name = 'make:modal';
+    protected $name = 'make:page';
 
-    protected $description = 'Create a new modal';
+    protected $description = 'Create a new page';
 
-    protected $type = 'Modal';
+    protected $type = 'Page';
 
     protected function getStub()
     {
         if ($this->option('form')) {
-            return $this->resolveStubPath('/stubs/conquest.modal.form.stub');
+            return $this->resolveStubPath('/stubs/conquest.page.form.stub');
         }
 
-        return $this->resolveStubPath('/stubs/conquest.modal.stub');
+        return $this->resolveStubPath('/stubs/conquest.page.stub');
     }
 
     protected function rootNamespace()
     {
-        return config('assemble.paths.modals', 'js/Modals');
+        return config('assemble.paths.page', 'js/Pages');
     }
 
     protected function getOptions()
     {
         return [
-            ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the modal even if the modal already exists'],
-            ['form', 'F', InputOption::VALUE_NONE, 'Indicates whether the generated modal should be a form'],
+            ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the page even if the page already exists'],
+            ['form', 'F', InputOption::VALUE_NONE, 'Indicates whether the generated page should be a form'],
         ];
     }
 

@@ -1,16 +1,13 @@
 <?php
 
-namespace Conquest\Assemble\Console\Commands;
+namespace Conquest\Assemble\Commands;
 
-use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(name: 'make:js-component')]
 class ComponentMakeCommand extends ResourceGeneratorCommand
 {
-    use ResolvesStubPath;
-
     protected $name = 'make:js-component';
 
     protected $description = 'Create a new component';

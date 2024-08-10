@@ -157,7 +157,6 @@ trait HasMethods
                 'Store',
                 'Update',
                 'Destroy',
-                'Index', // Cannot be a modal -> fixed
             ])->transform(fn ($name) => strtolower($name))
                 ->all()
         );

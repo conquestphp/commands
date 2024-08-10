@@ -1,14 +1,24 @@
 <?php
 
-namespace Conquest\Assemble\Console\Commands;
+namespace Conquest\Assemble\Commands;
 
-use Conquest\Assemble\Concerns\ResolvesStubPath;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
 
 abstract class ResourceGeneratorCommand extends GeneratorCommand
 {
-    use ResolvesStubPath;
+    /**
+     * Resolve the fully-qualified path to the stub.
+     *
+     * @param  string  $stub
+     * @return string
+     */
+    protected function resolveStubPath($stub)
+    {
+        return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
+                        ? $customPath
+                        : __DIR__.$stub;
+    }
 
     /**
      * Execute the console command.

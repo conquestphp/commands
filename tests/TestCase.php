@@ -23,6 +23,23 @@ class TestCase extends Orchestra
 
     protected function getEnvironmentSetUp($app)
     {
-        $app->setBasePath(__DIR__ . '/../workbench');
+        $app['config']->set('workbench', [
+            'start' => '/',
+            'install' => true,
+            'guard' => 'web',
+            'discovers' => [
+                'web' => true,
+                'api' => false,
+                'commands' => false,
+                'components' => false,
+                'views' => false,
+            ],
+            'build' => [
+                'create-sqlite-db',
+                'migrate:fresh',
+            ],
+            'assets' => [],
+            'sync' => [],
+        ]);
     }
 }

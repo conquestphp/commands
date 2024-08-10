@@ -1,6 +1,6 @@
 <?php
 
-namespace Conquest\Assemble\Console\Commands;
+namespace Conquest\Assemble\Commands;
 
 use Conquest\Assemble\Concerns\HasMethods;
 use Illuminate\Support\Str;
@@ -210,19 +210,22 @@ class RouteAddCommand extends Command
             $this->components->error(sprintf('Route file [%s] does not exist.', $file));
             return false;
         }
-
-        $namespace = $this->resolveControllerNamespace($controller);        
+        
+        $namespace = $this->resolveControllerNamespace($controller);
         if (!file_exists(base_path(str($namespace)->lcfirst() . '.php'))) {
             $this->components->error(sprintf('Controller [%s] does not exist.', $controller));
             return false;
-        }
+        } 
         $content = file_get_contents($file);
         $content .= sprintf("\n\nuse %s;", str($namespace)->replace('/', '\\'));
         $content .= $this->getRouteContent($controller);
+        if (file_put_contents($file, $this->organiseFileContent($content))) {
+            $this->components->success(sprintf('Route for controller [%s] created successfully.', $controller));
+            return true;
+        }
 
-        file_put_contents($file, $this->organiseFileContent($content));
-
-        $this->components->success(sprintf('Route for controller [%s] created successfully.', $controller));
+        $this->components->error(sprintf('Route for controller [%s] could not be created.', $controller));
+        return false;
     }
 
 }

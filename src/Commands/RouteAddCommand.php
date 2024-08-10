@@ -167,19 +167,37 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
 
     protected function getRoutePath($controller)
     {
+        $method = $this->getMethodName($controller);
         $parts = explode('/', $this->getPureClassName($controller));
+        $end = array_pop($parts);
 
-        $count = count($parts);
+        return trim(collect($parts)->map(fn (string $part) => str($part)->kebab()->singular())
+            ->push($this->getFinalRoutePart($end, $method))
+            ->implode('/'), '/'
+        );      
+    }
 
-        return collect($parts)
-            ->map(function ($part, $index) use ($count) {
-                if ($this->option('model') && $index === $count - 1) {
-                    return str($part)->camel()->singular()->prepend('{')->append('}');
-                }
+    /**
+     * Get the final route part.
+     * 
+     * @param  string  $part
+     * @param  string  $method
+     * @return string
+     */
+    protected function getFinalRoutePart($part, $method)
+    {
+        if (!($scoped = $this->isScoped($method))) {
+            return strtolower($method) === 'create' ? 'create' : '';
+        }
 
-                return str($part)->kebab()->singular();
-            })
-            ->implode('/');
+        return str($part)->singular()
+                ->when($this->option('model') && $scoped, 
+                    fn ($part) => $part->camel()->prepend('{')->append('}'),
+                    fn ($part) => $part->kebab()->singular()
+                )
+                ->when(strtolower($method) === 'create', fn ($part) => $part->append('/create'))
+                ->when(strtolower($method) === 'edit', fn ($part) => $part->append('/edit'))
+                ->when(strtolower($method) === 'delete', fn ($part) => $part->append('/delete'));
     }
 
     protected function getRouteName($controller)

@@ -32,6 +32,23 @@ afterEach(function () {
     }
 });
 
+it('can add a route to web.php which is not a valid method', function () {
+    $path = createController($c = 'TestArchive');
+
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+    ]);
+
+    expect($success)->toBeTruthy();
+
+    $file = File::get($this->web);
+    $base = last(explode('/', $c));
+
+    expect($file)->toContain("use App\Http\Controllers\\{$c}Controller;");
+    expect($file)->toContain("Route::get('/', {$base}Controller::class)->name('test-archive');");
+    File::delete($path);
+});
+
 it('can add an index route to web.php', function () {
     $path = createController($c = 'TestIndex');
 
@@ -44,7 +61,7 @@ it('can add an index route to web.php', function () {
     $file = File::get($this->web);
     $base = last(explode('/', $c));
     expect($file)->toContain("use App\Http\Controllers\\{$c}Controller;");
-    expect($file)->toContain("Route::get('/test', {$base}Controller::class)->name('test.index');");
+    expect($file)->toContain("Route::get('/', {$base}Controller::class)->name('test.index');");
     File::delete($path);
 });
 
@@ -76,7 +93,7 @@ it('can add an store route to web.php', function () {
     $file = File::get($this->web);
     $base = last(explode('/', $c));
     expect($file)->toContain("use App\Http\Controllers\\{$c}Controller;");
-    expect($file)->toContain("Route::post('/test', {$base}Controller::class)->name('test.store');");
+    expect($file)->toContain("Route::post('/', {$base}Controller::class)->name('test.store');");
     File::delete($path);
 });
 
@@ -130,14 +147,14 @@ it('can add to a custom route file', function () {
     $base = last(explode('/', $c));
     $n = str_replace('/', '\\', $c);
     expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
-    expect($file)->toContain("Route::get('/test/test', {$base}Controller::class)->name('test.test.edit');");
+    expect($file)->toContain("Route::get('/test/test/edit', {$base}Controller::class)->name('test.test.edit');");
 
     File::delete($path);
     File::delete($controller);
 });
 
 it('can use route model binding', function () {
-    $path = createController($c = 'Test/TestItemCreate');
+    $path = createController($c = 'Test/TestItemShow');
 
     $success = Artisan::call('add:route', [
         'controller' => $c,
@@ -150,7 +167,7 @@ it('can use route model binding', function () {
     $base = last(explode('/', $c));
     $n = str_replace('/', '\\', $c);
     expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
-    expect($file)->toContain("Route::get('/test/{testItem}', {$base}Controller::class)->name('test.test-item.create');");
+    expect($file)->toContain("Route::get('/test/{testItem}', {$base}Controller::class)->name('test.test-item.show');");
 
     File::delete($path);
 });
@@ -169,7 +186,7 @@ it('can limit to a class base name for the route name', function () {
     $base = last(explode('/', $c));
     $n = str_replace('/', '\\', $c);
     expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
-    expect($file)->toContain("Route::get('/test/test-item', {$base}Controller::class)->name('test-item.delete');");
+    expect($file)->toContain("Route::get('/test/test-item/delete', {$base}Controller::class)->name('test-item.delete');");
 
     File::delete($path);
 });

@@ -6,8 +6,8 @@ trait HasMethods
 {
     public $methods = [
         'Index',
+        'Create', // Must be chronologically before Show
         'Show',
-        'Create',
         'Store',
         'Edit',
         'Update',

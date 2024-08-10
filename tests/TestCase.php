@@ -3,17 +3,16 @@
 namespace Conquest\Command\Tests;
 
 use Conquest\Command\ConquestCommandServiceProvider;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Workbench\App\Providers\WorkbenchServiceProvider;
 
 class TestCase extends Orchestra
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->loadLaravelMigrations(['--database' => 'testing']);
     }
 
     protected function getPackageProviders($app)

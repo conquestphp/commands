@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 use function Pest\Laravel\artisan;
 
@@ -69,7 +69,7 @@ it('can add an index route to web.php', function () {
 //     ]);
 
 //     $file = File::get($path);
-    
+
 //     expect($file)->toContain("use App\Http\Controllers\TestIndexController;");
 //     expect($file)->toContain("Route::get('/test', TestIndexController::class)->name('test.index');");
 

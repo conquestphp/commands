@@ -3,11 +3,9 @@
 namespace Conquest\Assemble\Tests;
 
 use Conquest\Assemble\AssembleServiceProvider;
-use Orchestra\Testbench\TestCase as Orchestra;
-use Orchestra\Testbench\Attributes\WithMigration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Orchestra\Testbench\TestCase as Orchestra;
 use Workbench\App\Providers\WorkbenchServiceProvider;
-use function Orchestra\Testbench\artisan; 
 
 class TestCase extends Orchestra
 {
@@ -35,9 +33,9 @@ class TestCase extends Orchestra
 
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
     }
 }

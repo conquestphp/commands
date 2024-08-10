@@ -3,11 +3,11 @@
 namespace Conquest\Assemble\Commands;
 
 use Conquest\Assemble\Concerns\HasMethods;
-use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Support\Str;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 
 class RouteAddCommand extends Command implements PromptsForMissingInput
 {
@@ -76,7 +76,7 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
             $controller = $controller->substr(0, -4);
         }
         // Ensure it ends with Controller
-        if (!$controller->endsWith('Controller')) {
+        if (! $controller->endsWith('Controller')) {
             return $controller->append('Controller')->toString();
         }
 
@@ -90,7 +90,7 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
      */
     protected function getFileOption()
     {
-        if (!($file = $this->option('file'))) {
+        if (! ($file = $this->option('file'))) {
             return $this->route_path('web');
         }
 
@@ -110,12 +110,12 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
      */
     protected function route_path($file)
     {
-        return $this->laravel->basePath('routes/' . $file . '.php');
+        return $this->laravel->basePath('routes/'.$file.'.php');
     }
 
     /**
      * Resolve the controller namespace.
-     * 
+     *
      * @param  string  $controller
      * @return string
      */
@@ -150,18 +150,17 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
         $content = preg_replace('/^\s*$/m', '', $content);
 
         // Reconstruct file content
-        $newContent = "<?php\n\n" . implode("\n", $imports) . "\n\n" . trim($content) . "\n" . implode("\n", $routes);
+        $newContent = "<?php\n\n".implode("\n", $imports)."\n\n".trim($content)."\n".implode("\n", $routes);
 
         return trim($newContent);
     }
 
-
     protected function getRouteContent($controller)
     {
-        return sprintf("\nRoute::%s('/%s', %s::class)->name('%s');\n", 
-            $this->getHttpMethod($this->getMethodName($controller)), 
-            $this->getRoutePath($controller), 
-            $this->getBase($controller), 
+        return sprintf("\nRoute::%s('/%s', %s::class)->name('%s');\n",
+            $this->getHttpMethod($this->getMethodName($controller)),
+            $this->getRoutePath($controller),
+            $this->getBase($controller),
             $this->getRouteName($controller)
         );
     }
@@ -171,11 +170,13 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
         $parts = explode('/', $this->getPureClassName($controller));
 
         $count = count($parts);
+
         return collect($parts)
             ->map(function ($part, $index) use ($count) {
                 if ($this->option('model') && $index === $count - 1) {
                     return str($part)->camel()->singular()->prepend('{')->append('}');
                 }
+
                 return str($part)->kebab()->singular();
             })
             ->implode('/');
@@ -187,12 +188,13 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
         $parts = explode('/', $this->getPureClassName($controller));
 
         if ($this->option('class')) {
-            return str(end($parts))->kebab()->singular() . '.' . str($method)->kebab();
+            return str(end($parts))->kebab()->singular().'.'.str($method)->kebab();
         }
+
         return str(collect($parts)
             ->map(fn ($part) => str($part)->kebab()->singular())
             ->implode('.'))
-            ->when($method, fn ($route) => $route . '.' . str($method)->kebab());
+            ->when($method, fn ($route) => $route.'.'.str($method)->kebab());
     }
 
     /**
@@ -207,26 +209,29 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
         $controller = $this->getControllerInput();
         $file = $this->getFileOption();
 
-        if (!file_exists($file)) {
+        if (! file_exists($file)) {
             $this->components->error(sprintf('Route file [%s] does not exist.', $file));
+
             return false;
         }
-        
+
         $namespace = $this->resolveControllerNamespace($controller);
-        if (!file_exists(base_path(str($namespace)->lcfirst() . '.php'))) {
+        if (! file_exists(base_path(str($namespace)->lcfirst().'.php'))) {
             $this->components->error(sprintf('Controller [%s] does not exist.', $controller));
+
             return false;
-        } 
+        }
         $content = file_get_contents($file);
         $content .= sprintf("\n\nuse %s;", str($namespace)->replace('/', '\\'));
         $content .= $this->getRouteContent($controller);
         if (file_put_contents($file, $this->organiseFileContent($content))) {
             $this->components->success(sprintf('Route for controller [%s] created successfully.', $controller));
+
             return true;
         }
 
         $this->components->error(sprintf('Route for controller [%s] could not be created.', $controller));
+
         return false;
     }
-
 }

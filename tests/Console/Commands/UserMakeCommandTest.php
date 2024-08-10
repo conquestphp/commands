@@ -9,7 +9,7 @@ it('can create a user', function () {
         'email' => 'john@example.com',
         'password' => 'password123',
     ]);
-    
+
     expect(User::where('email', 'john@example.com')->exists())->toBeTrue();
     expect($result)->toBe(1); // Successful
 });
@@ -20,7 +20,7 @@ it('validates email', function () {
         'email' => 'johnexample.com',
         'password' => 'password123',
     ]);
-    
+
     expect(User::where('email', 'johnexample.com')->exists())->toBeFalse();
     expect($result)->toBe(0); // Fail
 });

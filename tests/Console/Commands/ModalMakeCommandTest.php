@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
     $this->js = resource_path('js/Modals');
@@ -19,7 +19,7 @@ it('can create a modal at root', function () {
     ]);
 
     expect(File::exists($path = $this->js."/$p.vue"))->toBeTrue();
-    expect(File::get($path))->toContain('const { close } = useModal()');  
+    expect(File::get($path))->toContain('const { close } = useModal()');
 });
 
 it('can create a modal with nesting', function () {
@@ -28,7 +28,7 @@ it('can create a modal with nesting', function () {
     ]);
 
     expect(File::exists($path = $this->js."/$p.vue"))->toBeTrue();
-    expect(File::get($path))->toContain('const { close } = useModal()');  
+    expect(File::get($path))->toContain('const { close } = useModal()');
 });
 
 it('can be made into a form modal', function () {
@@ -38,7 +38,7 @@ it('can be made into a form modal', function () {
     ]);
 
     expect(File::exists($path = $this->js."/$p.vue"))->toBeTrue();
-    expect(File::get($path))->toContain('const form');  
+    expect(File::get($path))->toContain('const form');
 });
 
 it('can be force written', function () {
@@ -48,7 +48,6 @@ it('can be force written', function () {
 
     expect(File::exists($path = $this->js."/$p.vue"))->toBeTrue();
     expect(File::get($path))->not->toContain('const form');
-
 
     Artisan::call('make:modal', [
         'name' => $p = 'TestShow',

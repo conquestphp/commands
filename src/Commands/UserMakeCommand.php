@@ -3,27 +3,28 @@
 namespace Conquest\Assemble\Commands;
 
 use Exception;
-use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use function Laravel\Prompts\text;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
-use function Laravel\Prompts\multiselect;
-use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Illuminate\Contracts\Console\PromptsForMissingInput;
+
+use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\text;
 
 #[AsCommand(name: 'user:make')]
 class UserMakeCommand extends Command implements PromptsForMissingInput
 {
-        /**
+    /**
      * The console command name.
      *
      * @var string
      */
-
     protected $name = 'user:make';
 
     /**
@@ -137,7 +138,7 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
             }
         });
 
-        if ($role) { 
+        if ($role) {
             $role = text('What role value would you like to give this user?');
             $input->setOption('role', $role);
         }
@@ -147,34 +148,37 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
      * Execute the console command.
      *
      * @return bool|null
-     *
      */
     public function handle()
     {
-        if (!$this->validateName($name = $this->getNameInput())) {
+        if (! $this->validateName($name = $this->getNameInput())) {
             $this->components->error(sprintf('The name provided [%s] is invalid.', $name));
+
             return false;
         }
 
-        if (!$this->validateEmail($email = $this->getEmailInput())) {
+        if (! $this->validateEmail($email = $this->getEmailInput())) {
             $this->components->error(sprintf('The email [%s] is invalid or already exists.', $email));
+
             return false;
         }
 
-        if (!$this->validatePassword($password = $this->getPasswordInput())) {
+        if (! $this->validatePassword($password = $this->getPasswordInput())) {
             $this->components->error(sprintf('The password provided [%s] is invalid.', $password));
+
             return false;
         }
-
 
         try {
-            $this->createUser($name,  $email,  $password);
+            $this->createUser($name, $email, $password);
         } catch (Exception $e) {
             $this->components->error(sprintf('There was an issue committing user [%s].', $email));
+
             return false;
         }
 
         $this->components->info(sprintf('User [%s] created successfully.', $email));
+
         return true;
     }
 
@@ -183,7 +187,6 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
      *
      * @param  string  $name
      * @return bool
-     *
      */
     protected function validateName($name)
     {
@@ -195,7 +198,6 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
      *
      * @param  string  $password
      * @return bool
-     *
      */
     protected function validatePassword($password)
     {
@@ -207,11 +209,10 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
      *
      * @param  string  $email
      * @return bool
-     *
      */
     protected function validateEmail($email)
     {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
 
@@ -230,11 +231,11 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
 
     /**
      * Create a new user.
-     * 
-     * @param string $name
-     * @param string $email
-     * @param string $password
-     * @return class
+     *
+     * @param  string  $name
+     * @param  string  $email
+     * @param  string  $password
+     * @return Model
      */
     protected function createUser($name, $email, $password)
     {
@@ -258,7 +259,7 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
 
     /**
      * Override function allowing for admin options to be set.
-     * 
+     *
      * @return array<string, string>
      */
     protected function asAdmin()
@@ -268,7 +269,7 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
 
     /**
      * Override function allowing for admin options to be set.
-     * 
+     *
      * @return array<string, string>
      */
     protected function asRole()
@@ -278,7 +279,7 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
 
     /**
      * Override function allowing for extra attributes to be set.
-     * 
+     *
      * @return array<string, string>
      */
     protected function extraAttributes()

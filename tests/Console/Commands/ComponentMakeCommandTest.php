@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
     $this->js = resource_path('js/Components');
@@ -19,7 +19,7 @@ it('can create a component at root', function () {
     ]);
 
     expect(File::exists($path = $this->js."/$p.vue"))->toBeTrue();
-    expect(File::get($path))->toContain('<template>');  
+    expect(File::get($path))->toContain('<template>');
 });
 
 it('can create a component with nesting', function () {
@@ -28,5 +28,5 @@ it('can create a component with nesting', function () {
     ]);
 
     expect(File::exists($path = $this->js."/$p.vue"))->toBeTrue();
-    expect(File::get($path))->toContain('<template>');  
+    expect(File::get($path))->toContain('<template>');
 });

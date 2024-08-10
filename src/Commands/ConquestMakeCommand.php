@@ -2,18 +2,19 @@
 
 namespace Conquest\Assemble\Commands;
 
-use function Laravel\Prompts\text;
-use function Laravel\Prompts\select;
-use function Laravel\Prompts\confirm;
-use Illuminate\Console\GeneratorCommand;
-use function Laravel\Prompts\multiselect;
 use Conquest\Assemble\Concerns\HasMethods;
-use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Console\GeneratorCommand;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
 #[AsCommand(name: 'make:conquest')]
 class ConquestMakeCommand extends GeneratorCommand
@@ -123,6 +124,7 @@ class ConquestMakeCommand extends GeneratorCommand
     {
         if ($this->isReservedName($this->getNameInput())) {
             $this->components->error('The name "'.$this->getNameInput().'" is reserved by PHP.');
+
             return false;
         }
 
@@ -139,8 +141,8 @@ class ConquestMakeCommand extends GeneratorCommand
 
         $name = $this->getPureClassName($this->getNameInput());
         $method = $this->getMethodInput();
-        
-        if (!$method && !$this->isValidMethod($method) && !$this->option('crud')) {
+
+        if (! $method && ! $this->isValidMethod($method) && ! $this->option('crud')) {
             $this->components->warn('You have not supplied a valid method.');
             if (! confirm('Are you sure you want to proceed? This will limit some of the functionality available.')) {
                 return false;
@@ -202,10 +204,9 @@ class ConquestMakeCommand extends GeneratorCommand
         }
 
         $method = select('What method should be used for this conquest command?', [
-            'Index', 'Create', 'Store', 'Show', 'Edit', 'Update', 'Destroy', 'Delete', 'None'
+            'Index', 'Create', 'Store', 'Show', 'Edit', 'Update', 'Destroy', 'Delete', 'None',
         ]);
         $input->setArgument('method', $method);
-
 
         collect(multiselect('Would you like any of the following?', [
             'all' => 'All',
@@ -217,7 +218,7 @@ class ConquestMakeCommand extends GeneratorCommand
 
         if ($input->getOption('all')) {
             return;
-        }        
+        }
 
         if ($input->getOption('model')) {
             collect(multiselect('Would you like to additionally create any of the following for the given model?', [
@@ -229,7 +230,7 @@ class ConquestMakeCommand extends GeneratorCommand
             ]))->each(fn ($option) => $input->setOption($option, true));
         }
 
-        if (!$this->isResourceless($input->getArgument('method'))) {
+        if (! $this->isResourceless($input->getArgument('method'))) {
             collect(multiselect('Would you like change the behaviour of the generated Javascript resource?', [
                 'page' => 'Page',
                 'modal' => 'Modal',
@@ -265,7 +266,6 @@ class ConquestMakeCommand extends GeneratorCommand
             ->replaceEmptyLines($stub)
             ->replaceClass($stub, $this->getBase($this->getController($name, $method)));
     }
-
 
     /**
      * Replace the request import to use the generated request.
@@ -390,10 +390,11 @@ class ConquestMakeCommand extends GeneratorCommand
             $content = $this->files->get($path);
         } catch (FileNotFoundException $e) {
             $this->components->warn('Unable to override request authorization using policy.');
+
             return false;
         }
 
-        $content = str_replace('return false;', sprintf('return $this->user()->can(\'%s\', %s::class);', match(str($method)->lower()->toString()) {
+        $content = str_replace('return false;', sprintf('return $this->user()->can(\'%s\', %s::class);', match (str($method)->lower()->toString()) {
             'index' => 'viewAny',
             'create', 'store' => 'create',
             'edit', 'update' => 'update',

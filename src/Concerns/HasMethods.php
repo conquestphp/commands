@@ -17,8 +17,8 @@ trait HasMethods
 
     /**
      * Check if the method is valid
-     * 
-     * @param string $method
+     *
+     * @param  string  $method
      * @return bool
      */
     public function isValidMethod($method)
@@ -33,8 +33,8 @@ trait HasMethods
 
     /**
      * Get the method name from the class name, if it exists and is valid
-     * 
-     * @param string $class
+     *
+     * @param  string  $class
      * @return string|null
      */
     public function getMethodName($class)
@@ -42,9 +42,9 @@ trait HasMethods
         $class = str_replace(['Controller', 'Request'], '', $class);
         $parts = explode('/', $class);
         $methodName = end($parts);
-        
+
         preg_match('/[A-Z][a-z]+$/', $methodName, $matches);
-        
+
         if ($this->isValidMethod($matches[0])) {
             return $matches[0];
         }
@@ -56,14 +56,15 @@ trait HasMethods
     {
         $class = str_replace(['Controller', 'Request'], '', $class);
         foreach ($this->methods as $method) {
-            $class = preg_replace('/' . $method . '$/', '', $class);
+            $class = preg_replace('/'.$method.'$/', '', $class);
         }
+
         return $class;
     }
 
     /**
      * Get the HTTP method for the route.
-     * 
+     *
      * @param  string  $method
      * @return string
      */
@@ -79,8 +80,7 @@ trait HasMethods
 
     /**
      * Get the base name of a pure class name
-     * 
-     * @param string $name
+     *
      * @return string
      */
     public function getBase(string $name)
@@ -119,7 +119,7 @@ trait HasMethods
         return in_array(
             strtolower($method),
             collect([
-                'Delete'
+                'Delete',
             ])->transform(fn ($name) => strtolower($name))
                 ->all()
         );
@@ -143,7 +143,7 @@ trait HasMethods
         );
     }
 
-     /**
+    /**
      * Checks whether the method cannot generate a javascript resource file, or cannot change
      *
      * @param  string  $method
@@ -164,7 +164,7 @@ trait HasMethods
 
     /**
      * Check whether the method can be scoped to a model
-     * 
+     *
      * @param  string  $method
      * @return bool
      */

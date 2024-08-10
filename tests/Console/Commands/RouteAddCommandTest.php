@@ -5,6 +5,23 @@ use Illuminate\Support\Facades\File;
 
 use function Pest\Laravel\artisan;
 
+function createController($name)
+{
+    if (!str($name)->endsWith('Controller')) {
+        $name .= 'Controller';
+    }
+
+    $path = base_path('app/Http/Controllers/'.$name.'.php');
+    $directory = dirname($path);
+
+    if (!File::isDirectory($directory)) {
+        File::makeDirectory($directory, 0755, true, true);
+    }
+
+    File::put($path, "<?php\n\nuse Illuminate\Support\Facades\Route;\n\nclass {$name}\n{\n\tpublic function __invoke(Request \$request)\n\t{\n\t\treturn 'Hello, world!';\n\t}\n}");
+    return $path;
+}
+
 beforeEach(function () {
     $this->web = base_path('routes/web.php');
     File::put($this->web, "<?php\n\nuse Illuminate\Support\Facades\Route;\n");
@@ -17,87 +34,143 @@ afterEach(function () {
 });
 
 it('can add an index route to web.php', function () {
-    artisan('add:route', [
-        'controller' => 'TestIndex',
+    $path = createController($c = 'TestIndex');
+
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
     ]);
 
+    expect($success)->toBeTruthy();
+
     $file = File::get($this->web);
-    expect($file)->toContain("use App\Http\Controllers\TestIndexController;");
-    expect($file)->toContain("Route::get('/test', TestIndexController::class)->name('test.index');");
+    $base = last(explode('/', $c));
+    expect($file)->toContain("use App\Http\Controllers\\{$c}Controller;");
+    expect($file)->toContain("Route::get('/test', {$base}Controller::class)->name('test.index');");
+    File::delete($path);
 });
 
-// it('can add a update route to web.php', function () {
-//     Artisan::call('add:route', [
-//         'controller' => 'Test/TestUpdateController',
-//     ]);
+it('can add an update route to web.php', function () {
+    $path = createController($c ='TestUpdate');
 
-//     $file = File::get($this->web);
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+    ]);
 
-//     expect($file)->toContain("use App\Http\Controllers\Test\TestUpdateController;");
-//     expect($file)->toContain("Route::patch('/test/test', TestUpdateController::class)->name('test.test.update');");
-// });
+    expect($success)->toBeTruthy();
 
-// it('can add a destroy route to web.php', function () {
-//     Artisan::call('add:route', [
-//         'controller' => 'Test/TestDestroyController',
-//     ]);
+    $file = File::get($this->web);
+    $base = last(explode('/', $c));
+    expect($file)->toContain("use App\Http\Controllers\\{$c}Controller;");
+    expect($file)->toContain("Route::patch('/test', {$base}Controller::class)->name('test.update');");
+    File::delete($path);
+});
 
-//     $file = File::get($this->web);
+it('can add an store route to web.php', function () {
+    $path = createController($c = 'TestStore');
 
-//     expect($file)->toContain("use App\Http\Controllers\Test\TestDestroyController;");
-//     expect($file)->toContain("Route::delete('/test/test', TestDestroyController::class)->name('test.test.destroy');");
-// });
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+    ]);
 
-// it('can add a store route to web.php', function () {
-//     Artisan::call('add:route', [
-//         'controller' => 'Test/TestStoreController',
-//     ]);
+    expect($success)->toBeTruthy();
 
-//     $file = File::get($this->web);
+    $file = File::get($this->web);
+    $base = last(explode('/', $c));
+    expect($file)->toContain("use App\Http\Controllers\\{$c}Controller;");
+    expect($file)->toContain("Route::post('/test', {$base}Controller::class)->name('test.store');");
+    File::delete($path);
+});
 
-//     expect($file)->toContain("use App\Http\Controllers\Test\TestStoreController;");
-//     expect($file)->toContain("Route::post('/test/test', TestStoreController::class)->name('test.test.store');");
-// });
+it('can add an destroy route to web.php', function () {
+    $path = createController($c ='TestDestroy');
 
-// it('can add to a custom route file', function () {
-//     $path = base_path('routes/test.php');
-//     File::put($path, "<?php\n\nuse Illuminate\Support\Facades\Route;\n");
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+    ]);
 
-//     Artisan::call('add:route', [
-//         'controller' => 'TestIndexController',
-//         '--file' => 'test.php',
-//     ]);
+    expect($success)->toBeTruthy();
 
-//     $file = File::get($path);
+    $file = File::get($this->web);
+    $base = last(explode('/', $c));
+    expect($file)->toContain("use App\Http\Controllers\\{$c}Controller;");
+    expect($file)->toContain("Route::delete('/test', {$base}Controller::class)->name('test.destroy');");
+    File::delete($path);
+});
 
-//     expect($file)->toContain("use App\Http\Controllers\TestIndexController;");
-//     expect($file)->toContain("Route::get('/test', TestIndexController::class)->name('test.index');");
+it('supports directory structure', function () {
+    $path = createController($c = 'Test/TestShow');
 
-//     if (File::exists($path)) {
-//         File::delete($path);
-//     }
-// });
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+    ]);
 
-// it('can use a model for the route', function () {
-//     Artisan::call('add:route', [
-//         'controller' => 'Test/TestDestroyController',
-//         '--model' => true,
-//     ]);
+    expect($success)->toBeTruthy();
 
-//     $file = File::get($this->web);
+    $file = File::get($this->web);
+    $base = last(explode('/', $c));
+    $n = str_replace('/', '\\', $c);
+    expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
+    expect($file)->toContain("Route::get('/test/test', {$base}Controller::class)->name('test.test.show');");
+    File::delete($path);
+});
 
-//     expect($file)->toContain("use App\Http\Controllers\Test\TestDestroyController;");
-//     expect($file)->toContain("Route::delete('/test/{test}', TestDestroyController::class)->name('test.test.destroy');");
-// });
+it('can add to a custom route file', function () {
+    $controller = createController($c = 'Test/TestEdit');
 
-// it('can limit to a class base name for the route name', function () {
-//     Artisan::call('add:route', [
-//         'controller' => 'Test/TestDestroyController',
-//         '--class' => true,
-//     ]);
+    $path = base_path('routes/test.php');
+    File::put($path, "<?php\n\nuse Illuminate\Support\Facades\Route;\n");
 
-//     $file = File::get($this->web);
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+        '--file' => 'test.php',
+    ]);
 
-//     expect($file)->toContain("use App\Http\Controllers\Test\TestDestroyController;");
-//     expect($file)->toContain("Route::delete('/test/test', TestDestroyController::class)->name('test.destroy');");
-// });
+    expect($success)->toBeTruthy();
+
+    $file = File::get($path);
+    $base = last(explode('/', $c));
+    $n = str_replace('/', '\\', $c);
+    expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
+    expect($file)->toContain("Route::get('/test/test', {$base}Controller::class)->name('test.test.edit');");
+
+    File::delete($path);
+    File::delete($controller);
+});
+
+it('can use route model binding', function () {
+    $path = createController($c = 'Test/TestItemCreate');
+
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+        '--model' => true,
+    ]);
+
+    expect($success)->toBeTruthy();
+
+    $file = File::get($this->web);
+    $base = last(explode('/', $c));
+    $n = str_replace('/', '\\', $c);
+    expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
+    expect($file)->toContain("Route::get('/test/{testItem}', {$base}Controller::class)->name('test.test-item.create');");
+
+    File::delete($path);
+});
+
+
+it('can limit to a class base name for the route name', function () {
+    $path = createController($c = 'Test/TestItemDelete');
+
+    $success = Artisan::call('add:route', [
+        'controller' => $c,
+        '--class' => true,
+    ]);
+
+    expect($success)->toBeTruthy();
+
+    $file = File::get($this->web);
+    $base = last(explode('/', $c));
+    $n = str_replace('/', '\\', $c);
+    expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
+    expect($file)->toContain("Route::get('/test/test-item', {$base}Controller::class)->name('test-item.delete');");
+
+    File::delete($path);});

@@ -208,17 +208,16 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
     {
         $controller = $this->getControllerInput();
         $file = $this->getFileOption();
-
         if (! file_exists($file)) {
             $this->components->error(sprintf('Route file [%s] does not exist.', $file));
-
+            
             return false;
         }
-
+        
         $namespace = $this->resolveControllerNamespace($controller);
         if (! file_exists(base_path(str($namespace)->lcfirst().'.php'))) {
             $this->components->error(sprintf('Controller [%s] does not exist.', $controller));
-
+            
             return false;
         }
         $content = file_get_contents($file);
@@ -226,10 +225,8 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
         $content .= $this->getRouteContent($controller);
         if (file_put_contents($file, $this->organiseFileContent($content))) {
             $this->components->success(sprintf('Route for controller [%s] created successfully.', $controller));
-
             return true;
         }
-
         $this->components->error(sprintf('Route for controller [%s] could not be created.', $controller));
 
         return false;

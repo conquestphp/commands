@@ -248,7 +248,7 @@ class RouteAddCommand extends Command implements PromptsForMissingInput
         $content .= sprintf("\n\nuse %s;", str($namespace)->replace('/', '\\'));
         $content .= $this->getRouteContent($controller);
         if (file_put_contents($file, $this->organiseFileContent($content))) {
-            $this->components->success(sprintf('Route for controller [%s] created successfully.', $controller));
+            $this->components->info(sprintf('Route for controller [%s] created successfully.', $controller));
 
             return true;
         }

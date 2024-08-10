@@ -3,22 +3,21 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
-use function Pest\Laravel\artisan;
-
 function createController($name)
 {
-    if (!str($name)->endsWith('Controller')) {
+    if (! str($name)->endsWith('Controller')) {
         $name .= 'Controller';
     }
 
     $path = base_path('app/Http/Controllers/'.$name.'.php');
     $directory = dirname($path);
 
-    if (!File::isDirectory($directory)) {
+    if (! File::isDirectory($directory)) {
         File::makeDirectory($directory, 0755, true, true);
     }
 
     File::put($path, "<?php\n\nuse Illuminate\Support\Facades\Route;\n\nclass {$name}\n{\n\tpublic function __invoke(Request \$request)\n\t{\n\t\treturn 'Hello, world!';\n\t}\n}");
+
     return $path;
 }
 
@@ -50,7 +49,7 @@ it('can add an index route to web.php', function () {
 });
 
 it('can add an update route to web.php', function () {
-    $path = createController($c ='TestUpdate');
+    $path = createController($c = 'TestUpdate');
 
     $success = Artisan::call('add:route', [
         'controller' => $c,
@@ -82,7 +81,7 @@ it('can add an store route to web.php', function () {
 });
 
 it('can add an destroy route to web.php', function () {
-    $path = createController($c ='TestDestroy');
+    $path = createController($c = 'TestDestroy');
 
     $success = Artisan::call('add:route', [
         'controller' => $c,
@@ -156,7 +155,6 @@ it('can use route model binding', function () {
     File::delete($path);
 });
 
-
 it('can limit to a class base name for the route name', function () {
     $path = createController($c = 'Test/TestItemDelete');
 
@@ -173,4 +171,5 @@ it('can limit to a class base name for the route name', function () {
     expect($file)->toContain("use App\Http\Controllers\\{$n}Controller;");
     expect($file)->toContain("Route::get('/test/test-item', {$base}Controller::class)->name('test-item.delete');");
 
-    File::delete($path);});
+    File::delete($path);
+});

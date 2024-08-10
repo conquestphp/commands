@@ -28,8 +28,8 @@ it('can create a conquest endpoint which uses a valid method', function () {
         '--force' => true,
     ]);
 
-    // $controller = base_path('app/Http/Controllers/Conquest/UserIndexController.php');
-    // $request = base_path('app/Http/Requests/Conquest/UserIndexRequest.php');
-    // expect(File::exists($controller))->toBeTrue();
-    // expect(File::exists($request))->toBeTrue();
+    $controller = base_path('app/Http/Controllers/Conquest/UserIndexController.php');
+    $request = base_path('app/Http/Requests/Conquest/UserIndexRequest.php');
+    expect(File::exists($controller))->toBeTrue();
+    expect(File::exists($request))->toBeTrue();
 });

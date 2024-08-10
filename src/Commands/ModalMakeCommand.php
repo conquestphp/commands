@@ -1,6 +1,6 @@
 <?php
 
-namespace Conquest\Assemble\Commands;
+namespace Conquest\Command\Commands;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,7 +29,7 @@ class ModalMakeCommand extends ResourceGeneratorCommand
 
     protected function rootNamespace()
     {
-        return config('assemble.paths.modals', 'js/Modals');
+        return config('conquest-command.paths.modals', 'js/Modals');
     }
 
     protected function getOptions()

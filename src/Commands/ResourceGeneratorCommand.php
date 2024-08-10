@@ -1,6 +1,6 @@
 <?php
 
-namespace Conquest\Assemble\Commands;
+namespace Conquest\Command\Commands;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
@@ -68,7 +68,7 @@ abstract class ResourceGeneratorCommand extends GeneratorCommand
     protected function getPath($name)
     {
         $name = Str::replaceFirst($this->rootNamespace(), '', $name);
-        $extension = config('assemble.extension', 'vue');
+        $extension = config('conquest-command.extension', 'vue');
         $name = trim(str_replace('.'.$extension, '', $name));
 
         return resource_path(trim($this->rootNamespace(), '/').'/'.str_replace('\\', '/', $name).'.'.$extension);

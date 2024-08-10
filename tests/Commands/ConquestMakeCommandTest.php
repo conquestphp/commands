@@ -1,6 +1,6 @@
 <?php
 
-use Conquest\Assemble\Concerns\HasMethods;
+use Conquest\Command\Concerns\HasMethods;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 

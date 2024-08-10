@@ -1,6 +1,6 @@
 <?php
 
-// config for Conquest/Assemble
+// config for Conquest/Command
 return [
     'extension' => 'vue',
     'paths' => [

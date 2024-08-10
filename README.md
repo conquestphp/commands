@@ -1,11 +1,11 @@
 # Artisan commands to rapidly develop your apps.
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/conquest/assemble.svg?style=flat-square)](https://packagist.org/packages/conquest/assemble)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/conquest/assemble/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/conquest/assemble/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/conquest/assemble/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/conquest/assemble/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/conquest/assemble.svg?style=flat-square)](https://packagist.org/packages/conquest/assemble)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/conquest/command.svg?style=flat-square)](https://packagist.org/packages/conquest/command)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/jdw5/conquest-command/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/jdw5/conquest-command/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/jdw5/conquest-command/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/jdw5/conquest-command/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/conquest/command.svg?style=flat-square)](https://packagist.org/packages/conquest/command)
 
-Assemble is a package to eliminate the boilerplate code you often write when creating new files in your Laravel application. It is built for the Conquest ecosystem of packages, and so is a Javascript based implementation. 
+Conquest Command is a package to rapidly generate boilerplate code for your monolithic Laravel application using Artisan. 
 
 Users will need to publish the applications `stubs` to override them, as they are built by default for the private `Conquest Legion` boilerplate kit.
 
@@ -14,13 +14,13 @@ Users will need to publish the applications `stubs` to override them, as they ar
 You can install the package via composer:
 
 ```bash
-composer require conquest/assemble
+composer require conquest/command
 ```
 
 Customise the paths and extensions through by publishing config file with:
 
 ```bash
-php artisan vendor:publish --tag="assemble-config"
+php artisan vendor:publish --provider="Conquest\Command\ConquestCommandServiceProvider" --tag="config"
 ```
 
 This is the contents of the published config file:
@@ -41,7 +41,7 @@ return [
 You should also publish the stubs to customise them:
     
 ```bash
-php artisan vendor:publish --tag="assemble-stubs"
+php artisan vendor:publish --provider="Conquest\Command\ConquestCommandServiceProvider" --tag="stubs"
 ```
 
 
@@ -53,7 +53,8 @@ php artisan make:page
 php artisan make:modal
 php artisan make:conquest
 php artisan make:js-component
-php artisan create:user {email} {password}
+php artisan user:make
+php artisan add:route
 ```
 
 ### User Creation

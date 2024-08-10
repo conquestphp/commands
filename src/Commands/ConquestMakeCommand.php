@@ -1,8 +1,8 @@
 <?php
 
-namespace Conquest\Assemble\Commands;
+namespace Conquest\Command\Commands;
 
-use Conquest\Assemble\Concerns\HasMethods;
+use Conquest\Command\Concerns\HasMethods;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -353,7 +353,7 @@ class ConquestMakeCommand extends GeneratorCommand
 
         match (true) {
             $this->hasPage($method) || ($this->option('page') && ! $this->isResourceless($method)) => $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::render('%s', [\n\t\t\t%s\n\t\t]);", $resource, $props), $stub),
-            $this->hasModal($method) || ($this->option('modal') && ! $this->isResourceless($method)) => $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::modal('%s', [\n\t\t\t%s\n\t\t])->baseRoute(%s);", $resource, $props, config('assemble.base_route')), $stub),
+            $this->hasModal($method) || ($this->option('modal') && ! $this->isResourceless($method)) => $stub = str_replace(['{{ response }}', '{{response}}'], sprintf("return Inertia::modal('%s', [\n\t\t\t%s\n\t\t])->baseRoute(%s);", $resource, $props, config('conquest-command.base_route')), $stub),
             default => $stub = str_replace(['{{ response }}', '{{response}}'], 'return back();', $stub),
         };
 

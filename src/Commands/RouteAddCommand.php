@@ -1,8 +1,8 @@
 <?php
 
-namespace Conquest\Assemble\Commands;
+namespace Conquest\Command\Commands;
 
-use Conquest\Assemble\Concerns\HasMethods;
+use Conquest\Command\Concerns\HasMethods;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Support\Str;

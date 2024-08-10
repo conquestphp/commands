@@ -1,6 +1,6 @@
 <?php
 
-namespace Conquest\Assemble\Commands;
+namespace Conquest\Command\Commands;
 
 use Exception;
 use Illuminate\Console\Command;

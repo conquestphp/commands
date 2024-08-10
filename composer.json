@@ -1,12 +1,13 @@
 {
-    "name": "conquest/assemble",
+    "name": "conquest/command",
     "description": "Artisan commands to rapidly develop your apps.",
     "keywords": [
         "Conquest",
         "laravel",
-        "assemble"
+        "cli",
+        "command"
     ],
-    "homepage": "https://github.com/conquest/assemble",
+    "homepage": "https://github.com/jdw5/conquest-command",
     "license": "MIT",
     "authors": [
         {
@@ -35,12 +36,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Conquest\\Assemble\\": "src/"
+            "Conquest\\Command\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Conquest\\Assemble\\Tests\\": "tests/",
+            "Conquest\\Command\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -78,7 +79,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Conquest\\Assemble\\AssembleServiceProvider"
+                "Conquest\\Command\\ConquestCommandServiceProvider"
             ]
         }
     },

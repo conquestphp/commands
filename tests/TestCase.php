@@ -1,8 +1,8 @@
 <?php
 
-namespace Conquest\Assemble\Tests;
+namespace Conquest\Command\Tests;
 
-use Conquest\Assemble\AssembleServiceProvider;
+use Conquest\Command\ConquestCommandServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Workbench\App\Providers\WorkbenchServiceProvider;
@@ -22,7 +22,7 @@ class TestCase extends Orchestra
     protected function getPackageProviders($app)
     {
         return [
-            AssembleServiceProvider::class,
+            ConquestCommandServiceProvider::class,
             WorkbenchServiceProvider::class,
         ];
     }

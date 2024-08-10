@@ -1,6 +1,6 @@
 <?php
 
-namespace Conquest\Assemble\Concerns;
+namespace Conquest\Command\Concerns;
 
 trait HasMethods
 {

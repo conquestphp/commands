@@ -1,23 +1,23 @@
 <?php
 
-namespace Conquest\Assemble;
+namespace Conquest\Command;
 
-use Conquest\Assemble\Commands\ComponentMakeCommand;
-use Conquest\Assemble\Commands\ConquestMakeCommand;
-use Conquest\Assemble\Commands\ModalMakeCommand;
-use Conquest\Assemble\Commands\PageMakeCommand;
-use Conquest\Assemble\Commands\RouteAddCommand;
-use Conquest\Assemble\Commands\UserMakeCommand;
+use Conquest\Command\Commands\ComponentMakeCommand;
+use Conquest\Command\Commands\ConquestMakeCommand;
+use Conquest\Command\Commands\ModalMakeCommand;
+use Conquest\Command\Commands\PageMakeCommand;
+use Conquest\Command\Commands\RouteAddCommand;
+use Conquest\Command\Commands\UserMakeCommand;
 use Illuminate\Support\ServiceProvider;
 
-class AssembleServiceProvider extends ServiceProvider
+class ConquestCommandServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/assemble.php', 'assemble');
+        $this->mergeConfigFrom(__DIR__.'/../config/conquest-command.php', 'conquest-command');
 
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -36,13 +36,12 @@ class AssembleServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
         $this->publishes([
             __DIR__.'/Commands/stubs' => base_path('stubs'),
         ], 'stubs');
 
         $this->publishes([
-            __DIR__.'/../config/assemble.php' => config_path('assemble.php'),
+            __DIR__.'/../config/conquest-command.php' => config_path('conquest-command.php'),
         ], 'config');
 
     }

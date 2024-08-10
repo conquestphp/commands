@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use function Laravel\Prompts\text;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use function Laravel\Prompts\multiselect;
@@ -168,7 +169,6 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
         }
 
 
-
         try {
             $this->createUser($name,  $email,  $password);
         } catch (Exception $e) {
@@ -220,8 +220,6 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
         return ! $this->getUserModel()::where('email', $email)->exists();
     }
 
-    
-
     /**
      * Get the user model.
      *
@@ -232,6 +230,14 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
         return Str::replace('::class', '', config('auth.providers.users.model'));
     }
 
+    /**
+     * Create a new user.
+     * 
+     * @param string $name
+     * @param string $email
+     * @param string $password
+     * @return class
+     */
     protected function createUser($name, $email, $password)
     {
         $required = [
@@ -242,12 +248,14 @@ class UserMakeCommand extends Command implements PromptsForMissingInput
             'created_at' => now(),
         ];
 
-        return $this->getUserModel()::create(array_merge(
+        $user = ($this->getUserModel())::forceCreate(array_merge(
             $this->option('admin') ? $this->asAdmin() : [],
             $this->option('role') ? $this->asRole() : [],
             $this->extraAttributes(),
             $required,
         ));
+
+        return $user;
     }
 
     /**

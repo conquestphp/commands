@@ -176,6 +176,7 @@ enum SchemaColumn: string
             self::StartsAt => ['required', 'date', 'after_or_equal:now'],
             self::EndsAt => ['nullable', 'date', 'after_or_equal:now'],
             self::IsBoolean => ['required', 'boolean'],
+            self::Details, self::Notes => ['nullable', 'string', sprintf('max:%s', $this->length())],
             self::Data => ['required', 'json', sprintf('max:%s', $this->length())],
             self::Price => ['required', 'integer', 'min:0', sprintf('max:%s', $this->length())],
             self::Quantity => ['required', 'integer', 'min:0', sprintf('max:%s', $this->length())],
@@ -216,4 +217,76 @@ enum SchemaColumn: string
             default => false,
         };
     }
+
+    public function factory(mixed $value): string
+    {
+        return match ($this) {
+            self::Name, self::Title => 'fake()->name()',
+            self::Email => 'fake()->unique()->safeEmail()',
+            self::Slug => 'fake()->unique()->slug()',
+            self::Password => 'fake()->password(8)',
+            self::Username => 'fake()->unique()->userName()',
+            self::FirstName => 'fake()->firstName()',
+            self::LastName => 'fake()->lastName()',
+            self::Description => 'fake()->text(512)',
+            self::Status => 'fake()->numberBetween(0, 6)',
+            self::Color, self::Colour => 'fake()->hexColor()',
+            self::Code => 'fake()->unique()->regexify(\'[A-Z0-9]{5}\')',
+            self::Path, self::File => 'fake()->filePath()',
+            // self::ForeignId => 'null',
+            self::StartsAt => 'fake()->dateTimeBetween(\'-1 year\', \'now\')',
+            self::EndsAt => 'fake()->dateTimeBetween(\'now\', \'+1 year\')',
+            self::IsBoolean => 'fake()->boolean()',
+            self::Details, self::Notes => 'fake()->text(65535)',
+            self::Data => 'fake()->json()',
+            self::Phone => 'fake()->phoneNumber()',
+            self::Price => 'fake()->numberBetween(0, 10000)',
+            self::Quantity => 'fake()->numberBetween(0, 1000000)',
+            self::Address => 'fake()->address()',
+            self::City => 'fake()->city()',
+            self::State => 'fake()->state()',
+            self::Zip => 'fake()->postcode()',
+            self::Country => 'fake()->country()',
+            self::Duration => 'fake()->numberBetween(0, 300)',
+            self::Minutes => 'fake()->numberBetween(0, 300)',
+            self::Uuid => 'fake()->uuid()',
+            self::Order, self::Priority => 'fake()->numberBetween(0, 100)',
+            self::Token => 'fake()->regexify(\'[A-Z0-9]{32}\')',
+            self::Coordinate => 'fake()->point()',
+            self::Latitude, self::Lat => 'fake()->latitude()',
+            self::Longitude, self::Long => 'fake()->longitude()',
+            self::Version => 'fake()->numberBetween(0, 100)',
+            self::Image => 'fake()->imageUrl()',
+            self::Url => 'fake()->url()',
+            self::IpAddress => 'fake()->ipv4()',
+            self::Icon => 'fake()->slug()',
+            // self::UpdatedBy => 'null',
+            // self::CreatedBy => 'null',
+            default => 'null',
+        };
+    }
+
+    public function hasRelationship(): bool
+    {
+        return match ($this) {
+            self::ForeignId,
+            self::CreatedBy,
+            self::UpdatedBy => true,
+            default => false,
+        };
+    }
+
+    // Assume that everything except user based relations is a HasMany
+    // public static function relationship(string $value, boolean $other = false): ?string
+    // {
+    //     if (in_array($value, [SchemaColumn::CreatedBy->value, SchemaColumn::UpdatedBy->value])) {
+    //         return 'belong';
+    //     }
+
+    //     // Retrieve the model name from the value
+    //     $model = str($value)->replace('*_id', '')->ucfirst()->value();
+
+
+    // }
+    
 }

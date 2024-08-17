@@ -16,13 +16,12 @@ class ConquestMigrationCreator extends MigrationCreator
      * Create a new migration creator instance.
      *
      * @param  \Illuminate\Filesystem\Filesystem  $files
-     * @param  string  $customStubPath
+     * @param  string  $content
      * @return void
      */
-    public function __construct(Filesystem $files, string $content = '')
+    public function __construct(Filesystem $files)
     {
-        $this->files = $files;
-        $this->content = $content;
+        parent::__construct($files, null);
     }
     
     protected function getStub($table, $create): string
@@ -30,11 +29,10 @@ class ConquestMigrationCreator extends MigrationCreator
         return $this->files->get(__DIR__.'/stubs/conquest.migration.stub');
     }
     
-    protected function populateStub($stub, $table)
+    protected function populateStub($stub, $name)
     {
-        $stub = parent::populateStub($stub, $table);
         $stub = $this->fillContent($stub);
-        return $stub;
+        return parent::populateStub($stub, $name);
     }
 
     public function getContent(): string

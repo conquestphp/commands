@@ -6,21 +6,25 @@ namespace Conquest\Command\Database\Migrations;
 
 use Conquest\Command\Database\Migrations\ConquestMigrationCreator;
 use Conquest\Command\Enums\SchemaColumn;
-use ReflectionClass;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-use Illuminate\Database\Migrations\MigrationCreator;
-use Illuminate\Database\Console\Migrations\TableGuesser;
 
 use function Laravel\Prompts\confirm;
 
-#[AsCommand(name: 'make:conquest-migration', description: 'Create a new migration file.')]
+#[AsCommand(name: 'conquest:migration', description: 'Create a new migration file.')]
 class ConquestMigrationMakeCommand extends Command implements PromptsForMissingInput
 {
+    /**
+     * Required base column for the schema.
+     * 
+     * @var string
+     */
+    protected $id = "\$table->id();";
+
     /**
     * The migration creator instance.
     *
@@ -38,17 +42,13 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
     {
         parent::__construct();
         $this->creator = $creator;
-        $this->creator->setContentPlaceholder('$table->id();');
     }
 
     public function handle()
     {
-        $name = Str::snake(trim($this->input->getArgument('name')));
-
         $this->creator->setContent($this->getColumns());
-
         $file = $this->creator->create(
-            $name, base_path('migrations')
+            $this->getFileName(), base_path('migrations'), $this->getClassName(), true
         );
 
         $this->components->info(sprintf('Migration [%s] created successfully.', $file));    
@@ -57,15 +57,22 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
     protected function getColumns()
     {
         if (! $this->option('attributes')) {
-            return '';
+            return $this->id;
         }
+
+        dd(str($this->option('attributes'))->explode(',')
+            ->map(fn ($column) => trim($column))
+            ->map(fn ($column) => $this->getSchema($column))
+            ->filter(fn ($column) => $column !== null)
+            ->sortBy(fn (array $column) => $column[0]->precedence()), descending: false);
 
         return str($this->option('attributes'))->explode(',')
             ->map(fn ($column) => trim($column))
             ->map(fn ($column) => $this->getSchema($column))
             ->filter(fn ($column) => $column !== null)
+            ->sortBy(fn (array $column) => $column[0]->precedence())
             ->map(fn (array $column) => $column[0]->blueprint($column[1]))
-            ->implode("\n");
+            ->implode("\n") . $this->id;
     }
 
     /**
@@ -100,12 +107,21 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
         return database_path('migrations');
     }
 
-    protected function getFormattedName(): string
+    protected function getClassName(): string
     {
-        return str(class_basename($this->getNameInput()))
-            ->pluralStudly()
+        return str($this->getNameInput())
+            ->plural()
             ->snake()
-            ->toString();
+            ->value();
+    }
+
+    protected function getFileName(): string
+    {
+        return str($this->getNameInput())
+            ->snake()
+            ->prepend('create_')
+            ->append('_table')
+            ->value();
     }
 
     protected function getNameInput()

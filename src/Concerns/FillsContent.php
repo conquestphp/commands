@@ -22,11 +22,11 @@ trait FillsContent
      * @param  string  $name
      * @return static
      */
-    public function fillContent(string &$stub): static
+    public function fillContent(string &$stub): string
     {
         $stub = str_replace($this->getContentPlaceholder(), $this->getContent(), $stub);
         $stub = str_replace($this->getDependencyPlaceholder(), $this->getDependencies(), $stub);
-        return $this;
+        return $stub;
     }
 
     /**

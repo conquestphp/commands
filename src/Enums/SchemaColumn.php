@@ -284,6 +284,16 @@ enum SchemaColumn: string
         };
     }
 
+    public function precedence(): int
+    {
+        return match ($this) {
+            self::ForeignId,
+            self::CreatedBy,
+            self::UpdatedBy => 100,
+            default => 0,
+        };
+    }
+
     public function relationship(string $name, string $table = null): ?string
     {
         if (!$this->hasRelationship()) {

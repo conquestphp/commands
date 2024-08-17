@@ -4,6 +4,7 @@ namespace Conquest\Command;
 
 use Conquest\Command\Commands\ComponentMakeCommand;
 use Conquest\Command\Commands\ConquestMakeCommand;
+use Conquest\Command\Commands\ConquestMigrationMakeCommand;
 use Conquest\Command\Commands\ModalMakeCommand;
 use Conquest\Command\Commands\PageMakeCommand;
 use Conquest\Command\Commands\RouteAddCommand;
@@ -27,6 +28,7 @@ class ConquestCommandServiceProvider extends ServiceProvider
                 ComponentMakeCommand::class,
                 RouteAddCommand::class,
                 UserMakeCommand::class,
+                ConquestMigrationMakeCommand::class,
             ]);
         }
     }

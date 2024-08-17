@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Conquest\Command\Enums;
 
 enum SchemaColumn: string
@@ -55,7 +57,6 @@ enum SchemaColumn: string
     case Long = 'long';
     case Colour = 'colour';
 
-
     /** Undefined */
     case Undefined = 'undefined';
 
@@ -73,51 +74,37 @@ enum SchemaColumn: string
         };
     }
 
-    public function blueprint(mixed $value): string
+    public function blueprint(mixed $name): string
     {
         return match ($this) {
             self::Name, self::Title, => '$table->string(\'name\');',
-            // self::Email => '$table->string(\'email\');',
+            self::Email => '$table->string(\'email\')->unique();',
             self::Slug => '$table->string(\'slug\')->unique();',
-            // self::Password => '$table->string(\'password\');',
-            // self::Username => '$table->string(\'username\');',
-            // self::FirstName => '$table->string(\'first_name\');',
-            // self::LastName => '$table->string(\'last_name\');',
-            self::Description => sprintf('$table->text(\'description\', %s)->nullable();', $this->length()()),
+            self::Description => sprintf('$table->string(\'description\', %s)->nullable();', $this->length()()),
             self::Status => '$table->unsignedTinyInteger(\'status\')->default(0);',
             self::Color, self::Colour => '$table->string(\'color\')->default(\'#000000\');',
-            // self::Code => '$table->string(\'code\');',
             self::Path, self::File => '$table->string(\'path\');',
-            self::ForeignId => sprintf('$table->foreignId(\'%s\')->constrained()->onDelete(\'cascade\');', $value),
+            self::ForeignId => sprintf('$table->foreignId(\'%s\')->constrained()->onDelete(\'cascade\');', $name),
             self::StartsAt => '$table->dateTime(\'starts_at\');',
             self::EndsAt => '$table->dateTime(\'ends_at\')->nullable();',
-            self::IsBoolean => sprintf('$table->boolean(\'%s\')->default(false);', $value),
+            self::IsBoolean => sprintf('$table->boolean(\'%s\')->default(false);', $name),
             self::Details, self::Notes => '$table->text(\'details\')->nullable();',
             self::Data => '$table->json(\'data\')->nullable();',
             self::Phone => '$table->string(\'phone\');',
             self::Price => '$table->unsignedInteger(\'price\')',
             self::Quantity => '$table->integer(\'quantity\')',
-            // self::Address => '$table->string(\'address\');',
-            // self::City => '$table->string(\'city\');',
-            // self::State => '$table->string(\'state\');',
-            // self::Zip => '$table->string(\'zip\');',
             self::Country => '$table->string(\'country\');',
             self::Duration => '$table->unsignedInteger(\'duration\');',
             self::Minutes => '$table->unsignedInteger(\'minutes\');',
             self::Uuid => '$table->uuid(\'uuid\');',
             self::Order, self::Priority => '$table->unsignedSmallInteger(\'order\');',
-            // self::Token => '$table->string(\'token\')',
             self::Coordinate => '$table->point(\'coordinate\')',
             self::Latitude, self::Lat => '$table->decimal(\'latitude\', 10, 8)',
             self::Longitude, self::Long => '$table->decimal(\'longitude\', 11, 8)',
             self::Version => '$table->unsignedSmallInteger(\'version\')',
             self::CreatedBy => '$table->foreignId(\'created_by\')->nullable()->constrained(\'users\')->onDelete(\'cascade\');',
             self::UpdatedBy => '$table->foreignId(\'updated_by\')->nullable()->constrained(\'users\')->onDelete(\'cascade\');',
-            // self::Image => '$table->string(\'image\')',
-            // self::Url => '$table->string(\'url\')',
-            // self::IpAddress => '$table->string(\'ip_address\')',
-            // self::Icon => '$table->string(\'icon\')',
-            default => sprintf('$table->string(\'%s\');', $value),
+            default => sprintf('$table->string(\'%s\');', $name),
         };
     }
 
@@ -163,7 +150,7 @@ enum SchemaColumn: string
         };
     }
 
-    public function rules(mixed $value, ?string $table = null): array
+    public function rules(string $name, ?string $table = null): array
     {
         return match ($this) {
             self::Email => ['required', 'string', 'email', sprintf('max:%s', $this->length())],
@@ -172,7 +159,7 @@ enum SchemaColumn: string
             self::Description => ['nullable', 'string', sprintf('max:%s', $this->length())],
             self::Status => ['required', 'integer', 'min:0', sprintf('max:%s', $this->length())],
             self::Color, self::Colour => ['nullable', 'hex_color', sprintf('max:%s', $this->length())],
-            self::ForeignId => ['required', 'integer', 'exists:users,id'],
+            self::ForeignId => ['required', 'integer', sprintf('exists:%s,id', str($name)->replaceLast('_id', ''))],
             self::StartsAt => ['required', 'date', 'after_or_equal:now'],
             self::EndsAt => ['nullable', 'date', 'after_or_equal:now'],
             self::IsBoolean => ['required', 'boolean'],
@@ -218,7 +205,7 @@ enum SchemaColumn: string
         };
     }
 
-    public function factory(mixed $value): string
+    public function factory(mixed $name): string
     {
         return match ($this) {
             self::Name, self::Title => 'fake()->name()',
@@ -233,7 +220,6 @@ enum SchemaColumn: string
             self::Color, self::Colour => 'fake()->hexColor()',
             self::Code => 'fake()->unique()->regexify(\'[A-Z0-9]{5}\')',
             self::Path, self::File => 'fake()->filePath()',
-            // self::ForeignId => 'null',
             self::StartsAt => 'fake()->dateTimeBetween(\'-1 year\', \'now\')',
             self::EndsAt => 'fake()->dateTimeBetween(\'now\', \'+1 year\')',
             self::IsBoolean => 'fake()->boolean()',
@@ -260,9 +246,7 @@ enum SchemaColumn: string
             self::Url => 'fake()->url()',
             self::IpAddress => 'fake()->ipv4()',
             self::Icon => 'fake()->slug()',
-            // self::UpdatedBy => 'null',
-            // self::CreatedBy => 'null',
-            default => 'null',
+            default => 'null', // Id's
         };
     }
 
@@ -276,17 +260,53 @@ enum SchemaColumn: string
         };
     }
 
-    // Assume that everything except user based relations is a HasMany
-    // public static function relationship(string $value, boolean $other = false): ?string
-    // {
-    //     if (in_array($value, [SchemaColumn::CreatedBy->value, SchemaColumn::UpdatedBy->value])) {
-    //         return 'belong';
-    //     }
+    public function isUndefined(): bool
+    {
+        return $this === self::Undefined;
+    }
 
-    //     // Retrieve the model name from the value
-    //     $model = str($value)->replace('*_id', '')->ucfirst()->value();
+    public static function tryWithPatterns(string $name): ?SchemaColumn
+    {
+        return match (true) {
+            str($name)->endsWith('_id') => static::ForeignId,
+            str($name)->startsWith('is_') => static::IsBoolean,
+            default => static::tryFrom($name) ?? static::Undefined,
+        };
+    }
 
+    public function internal(): bool
+    {
+        return match ($this) {
+            self::Uuid,
+            self::CreatedBy,
+            self::UpdatedBy => true,
+            default => false,
+        };
+    }
 
-    // }
-    
+    public function relationship(string $name, string $table = null): ?string
+    {
+        if (!$this->hasRelationship()) {
+            return null;
+        }
+
+        $model = str($name)->replace('*_id', '')->lower()->value();
+
+        $signature = match (true) {
+            !!$table => str($table)->plural()->camel()->value(),
+            $model === SchemaColumn::CreatedBy->value => 'creator',
+            $model === SchemaColumn::UpdatedBy->value => 'updater',
+            default => str($model)->singular()->camel()->value()
+        };
+
+        $method = !!$table ? 'hasMany' : 'belongsTo';
+
+        return sprintf(
+            'public function %s()
+            {
+                return $this->%s(%s::class);
+            }
+            ', $signature, $method, str($model)->studly()->value()
+        );
+    }
 }

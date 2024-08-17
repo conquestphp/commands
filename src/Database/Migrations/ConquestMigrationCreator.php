@@ -27,14 +27,9 @@ class ConquestMigrationCreator extends MigrationCreator
     
     protected function getStub($table, $create): string
     {
-        return $this->files->get(__DIR__.'/stubs/migration.stub');
+        return $this->files->get(__DIR__.'/stubs/conquest.migration.stub');
     }
-
-    protected function getStubPath(): string
-    {
-        return __DIR__.'/stubs/migration.stub';
-    }
-
+    
     protected function populateStub($stub, $table)
     {
         $stub = parent::populateStub($stub, $table);

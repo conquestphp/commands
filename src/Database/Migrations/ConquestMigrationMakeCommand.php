@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Conquest\Command\Commands;
+namespace Conquest\Command\Database\Migrations;
 
 use Conquest\Command\Database\Migrations\ConquestMigrationCreator;
+use Conquest\Command\Enums\SchemaColumn;
 use ReflectionClass;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
@@ -14,6 +15,8 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Database\Console\Migrations\TableGuesser;
+
+use function Laravel\Prompts\confirm;
 
 #[AsCommand(name: 'make:conquest-migration', description: 'Create a new migration file.')]
 class ConquestMigrationMakeCommand extends Command implements PromptsForMissingInput
@@ -36,30 +39,55 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
         parent::__construct();
         $this->creator = $creator;
         $this->creator->setContentPlaceholder('$table->id();');
-        $this->creator->afterCreate(fn ($table, $path) => $this->fillContent());
     }
 
     public function handle()
     {
         $name = Str::snake(trim($this->input->getArgument('name')));
 
-        $this->creator->setContent($this->getMigrationColumns());
+        $this->creator->setContent($this->getColumns());
 
         $file = $this->creator->create(
-            $name, database_path('migrations'), $table, true
+            $name, base_path('migrations')
         );
 
         $this->components->info(sprintf('Migration [%s] created successfully.', $file));    
     }
 
-    protected function getMigrationColumns()
+    protected function getColumns()
     {
-        $columns = array_map('trim', explode(',', $this->option('attributes')));
-        dd($columns);
-
-        if (empty($columns)) {
+        if (! $this->option('attributes')) {
             return '';
         }
+
+        return str($this->option('attributes'))->explode(',')
+            ->map(fn ($column) => trim($column))
+            ->map(fn ($column) => $this->getSchema($column))
+            ->filter(fn ($column) => $column !== null)
+            ->map(fn (array $column) => $column[0]->blueprint($column[1]))
+            ->implode("\n");
+    }
+
+    /**
+     * Get the schema for a given column.
+     *
+     * @param string $column The column name to get the schema for.
+     * @return array{0: SchemaColumn, 1: string} An array containing the SchemaColumn enum and the original column name.
+     */
+    protected function getSchema(string $column): array
+    {
+        $schema = SchemaColumn::tryWithPatterns($column);
+
+        if ($coalesced = $schema->coalesced()) {
+            $this->components->warn(sprintf('Column [%s] will be coalesced to [%s].', $column, $coalesced));
+        } elseif ($schema->isUndefined()) {
+            $confirmed = confirm(sprintf('Column [%s] is not a predefined column. Do you want to include it anyway?', $column));
+            if (! $confirmed) {
+                return null;
+            }
+        }
+
+        return [$schema, $column];
     }
 
     // protected function getStubPath()

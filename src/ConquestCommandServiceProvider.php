@@ -2,14 +2,14 @@
 
 namespace Conquest\Command;
 
-use Conquest\Command\Commands\ComponentMakeCommand;
-use Conquest\Command\Commands\ConquestMakeCommand;
-use Conquest\Command\Commands\ConquestMigrationMakeCommand;
-use Conquest\Command\Commands\ModalMakeCommand;
+use Illuminate\Support\ServiceProvider;
 use Conquest\Command\Commands\PageMakeCommand;
 use Conquest\Command\Commands\RouteAddCommand;
 use Conquest\Command\Commands\UserMakeCommand;
-use Illuminate\Support\ServiceProvider;
+use Conquest\Command\Commands\ModalMakeCommand;
+use Conquest\Command\Commands\ConquestMakeCommand;
+use Conquest\Command\Commands\ComponentMakeCommand;
+use Conquest\Command\Database\Migrations\ConquestMigrationMakeCommand;
 
 class ConquestCommandServiceProvider extends ServiceProvider
 {

@@ -4,34 +4,25 @@ declare(strict_types=1);
 
 namespace Conquest\Command\Commands;
 
-use Conquest\Command\Concerns\FillsContent;
+use Conquest\Command\Database\Migrations\ConquestMigrationCreator;
 use ReflectionClass;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Database\Console\Migrations\TableGuesser;
-use Filament\Support\Commands\Concerns\CanGeneratePanels;
-use Filament\Support\Commands\Concerns\CanManipulateFiles;
 
-#[AsCommand(name: 'conquest:migration')]
-class ConquestMigrationMakeCommand extends Command
+#[AsCommand(name: 'make:conquest-migration', description: 'Create a new migration file.')]
+class ConquestMigrationMakeCommand extends Command implements PromptsForMissingInput
 {
-    use FillsContent;
     /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Create a new migration file.';
-
-     /**
-     * The migration creator instance.
-     *
-     * @var \Illuminate\Database\Migrations\MigrationCreator
-     */
+    * The migration creator instance.
+    *
+    * @var \Illuminate\Database\Migrations\ConquestMigrationCreator
+    */
     protected $creator;
 
     /**
@@ -40,32 +31,43 @@ class ConquestMigrationMakeCommand extends Command
      * @param  \Illuminate\Database\Migrations\MigrationCreator  $creator
      * @return void
      */
-    public function __construct(MigrationCreator $creator)
+    public function __construct(ConquestMigrationCreator $creator)
     {
         parent::__construct();
         $this->creator = $creator;
-        $this->creator->afterCreate($this->fillContent());
+        $this->creator->setContentPlaceholder('$table->id();');
+        $this->creator->afterCreate(fn ($table, $path) => $this->fillContent());
     }
 
-    public function handle(): int
+    public function handle()
     {
-        // Ensure migration does not exist
+        $name = Str::snake(trim($this->input->getArgument('name')));
 
-        // getStub
+        $this->creator->setContent($this->getMigrationColumns());
 
-        // getPath
+        $file = $this->creator->create(
+            $name, database_path('migrations'), $table, true
+        );
 
-        // Make directory if needed
-
-        // Write file
-        dd(TableGuesser::guess($this->getFormattedName()));
-
-
-
-        $this->components->info(sprintf('Migration [%s] created successfully.', $this->getFormattedName()));
+        $this->components->info(sprintf('Migration [%s] created successfully.', $file));    
     }
 
-    protected function getWritePath()
+    protected function getMigrationColumns()
+    {
+        $columns = array_map('trim', explode(',', $this->option('attributes')));
+        dd($columns);
+
+        if (empty($columns)) {
+            return '';
+        }
+    }
+
+    // protected function getStubPath()
+    // {
+    //     return __DIR__.'/stubs/migration.stub';
+    // }
+
+    protected function getPath()
     {
         return database_path('migrations');
     }
@@ -101,7 +103,7 @@ class ConquestMigrationMakeCommand extends Command
     {
         return [
             ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the migration even if it already exists'],
-            ['attributes', 'a', InputOption::VALUE_OPTIONAL, 'The attributes of the migration'],
+            ['attributes', 'a', InputOption::VALUE_REQUIRED, 'The attributes of the migration'],
         ];
     }
 
@@ -111,7 +113,7 @@ class ConquestMigrationMakeCommand extends Command
             'name' => [
                 'What should the migration be named?',
                 'E.g. create_users_table',
-            ]
+            ],
         ];
     }
 }

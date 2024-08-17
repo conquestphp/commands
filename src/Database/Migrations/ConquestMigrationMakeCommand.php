@@ -4,20 +4,30 @@ declare(strict_types=1);
 
 namespace Conquest\Command\Database\Migrations;
 
-use Conquest\Command\Database\Migrations\ConquestMigrationCreator;
-use Conquest\Command\Enums\SchemaColumn;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Conquest\Command\Enums\SchemaColumn;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Conquest\Command\Database\Migrations\ConquestMigrationCreator;
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\text;
 
 #[AsCommand(name: 'conquest:migration', description: 'Create a new migration file.')]
 class ConquestMigrationMakeCommand extends Command implements PromptsForMissingInput
 {
+    /**
+     * Whether the user has confirmed undefined columns during prompting.
+     * 
+     * @var bool
+     */
+    protected $confirmedDuringPrompting = false;
+
     /**
      * Required base column for the schema.
      * 
@@ -56,23 +66,19 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
 
     protected function getColumns()
     {
-        if (! $this->option('attributes')) {
+        if (! $this->option('columns')) {
             return $this->id;
         }
-
-        dd(str($this->option('attributes'))->explode(',')
+            
+        return str(str($this->option('columns'))->explode(',')
             ->map(fn ($column) => trim($column))
             ->map(fn ($column) => $this->getSchema($column))
             ->filter(fn ($column) => $column !== null)
-            ->sortBy(fn (array $column) => $column[0]->precedence()), descending: false);
-
-        return str($this->option('attributes'))->explode(',')
-            ->map(fn ($column) => trim($column))
-            ->map(fn ($column) => $this->getSchema($column))
-            ->filter(fn ($column) => $column !== null)
-            ->sortBy(fn (array $column) => $column[0]->precedence())
-            ->map(fn (array $column) => $column[0]->blueprint($column[1]))
-            ->implode("\n") . $this->id;
+            ->sortByDesc(fn (array $column) => $column[0]->precedence())
+            ->map(fn (array $column) => "\t\t\t" . $column[0]->blueprint($column[1]))
+            ->implode("\n"))
+            ->prepend($this->id . "\n")
+            ->value();
     }
 
     /**
@@ -87,7 +93,7 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
 
         if ($coalesced = $schema->coalesced()) {
             $this->components->warn(sprintf('Column [%s] will be coalesced to [%s].', $column, $coalesced));
-        } elseif ($schema->isUndefined()) {
+        } elseif ($schema->isUndefined() && ! $this->confirmedDuringPrompting) {
             $confirmed = confirm(sprintf('Column [%s] is not a predefined column. Do you want to include it anyway?', $column));
             if (! $confirmed) {
                 return null;
@@ -147,7 +153,7 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
     {
         return [
             ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the migration even if it already exists'],
-            ['attributes', 'a', InputOption::VALUE_REQUIRED, 'The attributes of the migration'],
+            ['columns', 'a', InputOption::VALUE_REQUIRED, 'The columns of the migration'],
         ];
     }
 
@@ -160,4 +166,53 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
             ],
         ];
     }
+
+        /**
+     * Interact further with the user if they were prompted for missing arguments.
+     *
+     * @return void
+     */
+    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
+    {
+        if ($this->didReceiveOptions($input)) {
+            return;
+        }
+
+        $columns = collect();
+        collect(multiselect('Select which columns you would like to include?.', 
+            collect(SchemaColumn::cases())
+                ->filter(fn (SchemaColumn $column) => !$column->coalesced())
+                ->mapWithKeys(fn (SchemaColumn $column) => [$column->value => $column->name])
+                ->toArray()
+        ))->each(fn ($option) => $columns->push($option));
+        
+        if ($columns->contains(SchemaColumn::ForeignId->value)) {
+            $columns = $columns->reject(fn ($column) => $column === SchemaColumn::ForeignId->value);
+
+            while (true) {
+                $value = text('What is the foreign key column?', 'user_id');
+                $columns->push($value);
+
+                if (empty($value) || !confirm('Do you want to add another foreign key column?')) {
+                    break;
+                }
+            }                    
+        }
+
+        if ($columns->contains(SchemaColumn::Undefined->value)) {
+            $columns = $columns->reject(fn ($column) => $column === SchemaColumn::Undefined->value);
+            while (true) {
+                $value = text('What is the column name?', 'custom');
+                $columns->push($value);
+
+                if (empty($value) || !confirm('Do you want to add another column?')) {
+                    break;
+                }
+            }                    
+        }
+
+        $this->confirmedDuringPrompting = true;
+        $input->setOption('columns', $columns->unique()->implode(','));
+    }
+
 }

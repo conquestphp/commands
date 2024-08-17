@@ -30,7 +30,7 @@ it('can create a conquest migration which is default migration', function () {
 it('can create a conquest migration with attributes', function () {
     Artisan::call('conquest:migration', [
         'name' => $m = 'ExampleVersion',
-        '--attributes' => 'name,user_id,quantity'
+        '--columns' => 'name,user_id,quantity'
     ]);
 
     $files = File::files($this->migrations);

@@ -287,9 +287,13 @@ enum SchemaColumn: string
     public function precedence(): int
     {
         return match ($this) {
-            self::ForeignId,
+            self::ForeignId => 2,
+            self::Email,
+            self::Title,
+            self::Name,
+            self::Slug => 1,
             self::CreatedBy,
-            self::UpdatedBy => 100,
+            self::UpdatedBy => -1,
             default => 0,
         };
     }

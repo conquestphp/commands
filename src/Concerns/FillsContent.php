@@ -5,15 +5,13 @@ use Illuminate\Support\Collection;
 
 trait FillsContent
 {
+    use RequiresContentPlaceholder;
+    use RequiresDependencyPlaceholder;
+
     /**
      * @var Collection The dependencies of the stub.
      */
     protected Collection $dependencies;
-
-    /**
-     * @var array The default dependencies of the stub.
-     */
-    protected $defaultDependencies;
 
     public abstract function getContent(): string;
 
@@ -24,21 +22,11 @@ trait FillsContent
      * @param  string  $name
      * @return static
      */
-    public function fillContent(&$stub)
+    public function fillContent(string &$stub): static
     {
-        $stub = str_replace(['{{ content }}', '{{content}}'], $this->getContent(), $stub);
-        $stub = str_replace(['{{ dependencies }}', '{{dependencies}}'], $this->getDependencies(), $stub);
+        $stub = str_replace($this->getContentPlaceholder(), $this->getContent(), $stub);
+        $stub = str_replace($this->getDependencyPlaceholder(), $this->getDependencies(), $stub);
         return $this;
-    }
-
-    /**
-     * Set the default dependencies.
-     *
-     * @param  string  ...$dependencies
-     */
-    public function defaultDependencies(...$dependencies): void
-    {
-        $this->defaultDependencies = $dependencies;
     }
 
     /**
@@ -70,5 +58,25 @@ trait FillsContent
 
         $this->dependencies->push($dependency);
         return $this;
+    }
+
+    /**
+     * Set the content placeholder.
+     * 
+     * @param  array|string  $contentPlaceholder
+     */
+    public function setContentPlaceholder(array|string $contentPlaceholder): void
+    {
+        $this->contentPlaceholder = $contentPlaceholder;
+    }
+
+    /**
+     * Set the dependency placeholder.
+     * 
+     * @param  array|string  $dependencyPlaceholder
+     */
+    public function setDependencyPlaceholder(array|string $dependencyPlaceholder): void
+    {
+        $this->dependencyPlaceholder = $dependencyPlaceholder;
     }
 }

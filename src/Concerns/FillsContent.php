@@ -24,7 +24,7 @@ trait FillsContent
      * @param  string  $name
      * @return static
      */
-    public function fillContent(&$stub, $name)
+    public function fillContent(&$stub)
     {
         $stub = str_replace(['{{ content }}', '{{content}}'], $this->getContent(), $stub);
         $stub = str_replace(['{{ dependencies }}', '{{dependencies}}'], $this->getDependencies(), $stub);
@@ -52,7 +52,7 @@ trait FillsContent
             ->merge($this->dependencies ?? collect())
             ->unique()
             ->sort()
-            ->map(fn($dependency) => "use $dependency;")
+            ->map(fn ($dependency) => "use $dependency;")
             ->implode("\n");
     }
 

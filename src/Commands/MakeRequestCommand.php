@@ -1,31 +1,36 @@
 <?php
 
-namespace Filament\Commands;
+declare(strict_types=1);
 
-use Filament\Panel;
-use Illuminate\Support\Arr;
-use Filament\Clusters\Cluster;
-use Filament\Facades\Filament;
+namespace Conquest\Command\Commands;
+
 use Illuminate\Console\Command;
 use function Laravel\Prompts\text;
+use Illuminate\Support\Stringable;
 use function Laravel\Prompts\select;
+use Conquest\Command\Concerns\CanIndentStrings;
+use Symfony\Component\Console\Input\InputOption;
 use Conquest\Command\Concerns\InteractsWithFiles;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Conquest\Command\Contracts\GeneratesBoilerplate;
+use Symfony\Component\Console\Output\OutputInterface;
 use Conquest\Command\Concerns\InteractsWithMigrations;
-use Filament\Forms\Commands\Concerns\CanGenerateForms;
-use Filament\Support\Commands\Concerns\CanIndentStrings;
-use Filament\Tables\Commands\Concerns\CanGenerateTables;
-
-use Illuminate\Contracts\Console\PromptsForMissingInput;
-use Filament\Support\Commands\Concerns\CanManipulateFiles;
-use Filament\Support\Commands\Concerns\CanReadModelSchemas;
 
 #[AsCommand(name: 'make:conquest-request', description: 'Create a new form request class with Conquest')]
-class MakeResourceCommand extends Command implements GeneratesBoilerplate
+class MakeRequestCommand extends Command implements GeneratesBoilerplate
 {
     use InteractsWithFiles;
     use InteractsWithMigrations;
+    use CanIndentStrings;
+
+    /**
+     * The type of class being generated.
+     * 
+     * @var string
+     */
+    protected $type = 'Request';
     
     public function handle(): int
     {
@@ -66,6 +71,66 @@ class MakeResourceCommand extends Command implements GeneratesBoilerplate
 
         // $this->components->info("Filament resource [{$resourcePath}] created successfully.");
 
+        dd($this->getWritePath(), $this->getInputName()->value());
         return self::SUCCESS;
+    }
+
+    public function getArguments(): array
+    {
+        return [
+            ['name', InputArgument::REQUIRED, 'The name of the request to generate.'],
+            ['method', InputArgument::OPTIONAL, 'The method of the request to generate.'],
+        ];
+    }
+
+    public function getOptions(): array
+    {
+        return [
+            ['force', null, InputOption::VALUE_NONE, 'Create the request even if it already exists'],
+        ];
+    }
+
+    public function getInputName(): Stringable
+    {
+        return str($this->argument('name'))
+            ->beforeLast('.php')
+            ->trim('/')
+            ->trim('\\')
+            ->trim(' ')
+            ->studly()
+            ->replaceLast($this->type, '')
+            ->replace('/', '\\');
+    }
+
+    public function getWritePath(): string
+    {
+        return app_path('Http/Requests');
+    }
+
+    public function getFileExtension(): string
+    {
+        return '.php';
+    }
+
+    protected function promptForMissingArgumentsUsing()
+    {
+        return [
+            'name' => [
+                sprintf('What should the %s be named?', strtolower($this->type)),
+                'E.g. UserIndexRequest',
+            ],
+        ];
+    }
+
+    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
+    {
+        if ($this->didReceiveOptions($input)) {
+            return;
+        }
+
+        // collect(multiselect('Would you like any of the following?', [
+        //     'form' => 'As form',
+        //     'force' => 'Force creation',
+        // ]))->each(fn ($option) => $input->setOption($option, true));
     }
 }

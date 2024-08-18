@@ -3,11 +3,11 @@
     <Modal>
         <ModalBody>
             <ModalHeader>
-                <!-- Title -->
+
             </ModalHeader>
             <Form @submit.prevent="onSubmit">
                 <ModalContent>
-                    <!-- ... -->
+
                 </ModalContent>
                 <ModalFooter>
                     <Button variant="ghost" @click="close">

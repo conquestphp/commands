@@ -11,6 +11,7 @@ use Conquest\Command\Commands\FactoryMakeCommand;
 use Conquest\Command\Commands\ConquestMakeCommand;
 use Conquest\Command\Commands\ComponentMakeCommand;
 use Conquest\Command\Database\Migrations\ConquestMigrationCommand;
+use Conquest\Command\Commands\MakeRequestCommand;
 
 class ConquestCommandServiceProvider extends ServiceProvider
 {
@@ -31,6 +32,8 @@ class ConquestCommandServiceProvider extends ServiceProvider
                 UserMakeCommand::class,
                 ConquestMigrationCommand::class,
                 FactoryMakeCommand::class,
+
+                MakeRequestCommand::class,
             ]);
         }
     }

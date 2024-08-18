@@ -3,6 +3,7 @@
 namespace Conquest\Command\Contracts;
 
 use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Support\Stringable;
 
 interface GeneratesBoilerplate extends PromptsForMissingInput
 {
@@ -32,8 +33,22 @@ interface GeneratesBoilerplate extends PromptsForMissingInput
     /**
      * Get the formatted name argument.
      * 
+     * @return Stringable
+     */
+    public function getInputName(): Stringable;
+
+    /**
+     * Get the path to write the file to.
+     * 
      * @return string
      */
-    public function getName(): string;
+    public function getWritePath(): string;
+
+    /**
+     * Get the file extension.
+     * 
+     * @return string
+     */
+    public function getFileExtension(): string;
 }
 

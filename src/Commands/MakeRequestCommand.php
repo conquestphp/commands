@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Conquest\Command\Commands;
 
 use Conquest\Command\Concerns\HasSchemaColumns;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\spin;
 
 #[AsCommand(name: 'make:conquest-request', description: 'Create a new form request class with Conquest')]
 class MakeRequestCommand extends MakeBoilerplateCommand
@@ -19,22 +18,22 @@ class MakeRequestCommand extends MakeBoilerplateCommand
     use HasSchemaColumns;
 
     protected $type = 'Request';
-    
+
     public function handle(): int
     {
         $name = $this->getInputName();
-        if (blank($this->argument('method')) && !confirm('You have not provided a method name, would you like to proceed?')) {
+        if (blank($this->argument('method')) && ! confirm('You have not provided a method name, would you like to proceed?')) {
             return self::SUCCESS;
         }
 
         $request = $this->getInputName()->append($this->type)->value();
         $class = class_basename($request);
-        $path = $this->getFilePath($this->getWritePath(), $request . $this->getFileExtension());
+        $path = $this->getFilePath($this->getWritePath(), $request.$this->getFileExtension());
         $namespace = $this->getInputName()->replace('/', '\\')
             ->prepend('App\\Http\\Requests\\')
             ->beforeLast('\\')
             ->value();
-        
+
         if (! $this->hasOption('force') && $this->checkForCollision($path)) {
             return static::INVALID;
         }
@@ -43,16 +42,15 @@ class MakeRequestCommand extends MakeBoilerplateCommand
             'namespace' => $namespace,
             'class' => $class,
             'authorization' => $this->getAuthorization(),
-            'rules' => $this->getRules()
+            'rules' => $this->getRules(),
         ]);
 
         if (windows_os()) {
             $path = str_replace('/', '\\', $path);
         }
 
-
         $this->components->info(sprintf('%s [%s] created successfully.', $this->type, $path));
-        
+
         return self::SUCCESS;
     }
 
@@ -70,7 +68,7 @@ class MakeRequestCommand extends MakeBoilerplateCommand
     {
         return app_path('Http/Requests');
     }
-    
+
     protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
     {
         if ($this->didReceiveOptions($input)) {
@@ -85,7 +83,7 @@ class MakeRequestCommand extends MakeBoilerplateCommand
 
     private function getAuthorization(): string
     {
-        if (!$this->option('authorize')) {
+        if (! $this->option('authorize')) {
             return 'true';
         }
 
@@ -94,7 +92,7 @@ class MakeRequestCommand extends MakeBoilerplateCommand
 
     private function getRules(): string
     {
-        if (!$this->option('columns')) {
+        if (! $this->option('columns')) {
             return '//';
         }
 

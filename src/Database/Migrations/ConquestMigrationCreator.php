@@ -2,9 +2,9 @@
 
 namespace Conquest\Command\Database\Migrations;
 
-use Illuminate\Filesystem\Filesystem;
 use Conquest\Command\Concerns\FillsContent;
 use Illuminate\Database\Migrations\MigrationCreator;
+use Illuminate\Filesystem\Filesystem;
 
 class ConquestMigrationCreator extends MigrationCreator
 {
@@ -15,7 +15,6 @@ class ConquestMigrationCreator extends MigrationCreator
     /**
      * Create a new migration creator instance.
      *
-     * @param  \Illuminate\Filesystem\Filesystem  $files
      * @param  string  $content
      * @return void
      */
@@ -23,15 +22,16 @@ class ConquestMigrationCreator extends MigrationCreator
     {
         parent::__construct($files, null);
     }
-    
+
     protected function getStub($table, $create): string
     {
         return $this->files->get(__DIR__.'/stubs/conquest.migration.stub');
     }
-    
+
     protected function populateStub($stub, $name)
     {
         $stub = $this->fillContent($stub);
+
         return parent::populateStub($stub, $name);
     }
 

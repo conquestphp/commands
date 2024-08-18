@@ -4,9 +4,9 @@ namespace Conquest\Command\Commands;
 
 use Conquest\Command\Concerns\FillsContent;
 use Conquest\Command\Concerns\HasSchemaColumns;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Illuminate\Database\Console\Factories\FactoryMakeCommand as IlluminateFactoryMakeCommand;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(name: 'make:conquest-factory')]
 class FactoryMakeCommand extends IlluminateFactoryMakeCommand
@@ -32,6 +32,7 @@ class FactoryMakeCommand extends IlluminateFactoryMakeCommand
     protected function buildClass($name)
     {
         $stub = parent::buildClass($name);
+
         return $this->fillContent($stub);
     }
 
@@ -50,14 +51,14 @@ class FactoryMakeCommand extends IlluminateFactoryMakeCommand
 
     public function getContent(): string
     {
-        if (!$this->option('columns')) {
+        if (! $this->option('columns')) {
             return '//';
         }
 
         return str($this->getSchemaColumns()
-                ->map(fn (array $column) => sprintf('\'%s\' => %s', $column[1], $column[0]->factory($column[1])))
-                ->implode("\n\t\t\t")
-            )
+            ->map(fn (array $column) => sprintf('\'%s\' => %s', $column[1], $column[0]->factory($column[1])))
+            ->implode("\n\t\t\t")
+        )
             ->value();
     }
 }

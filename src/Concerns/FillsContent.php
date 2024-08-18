@@ -1,4 +1,5 @@
 <?php
+
 namespace Conquest\Command\Concerns;
 
 use Illuminate\Support\Collection;
@@ -13,12 +14,11 @@ trait FillsContent
      */
     protected Collection $dependencies;
 
-    public abstract function getContent(): string;
+    abstract public function getContent(): string;
 
     /**
      * Fill the content and dependencies in the stub.
      *
-     * @param  string  $stub
      * @param  string  $name
      * @return static
      */
@@ -26,13 +26,12 @@ trait FillsContent
     {
         $stub = str_replace($this->getContentPlaceholder(), $this->getContent(), $stub);
         $stub = str_replace($this->getDependencyPlaceholder(), $this->getDependencies(), $stub);
+
         return $stub;
     }
 
     /**
      * Get the formatted dependencies.
-     *
-     * @return string
      */
     public function getDependencies(): string
     {
@@ -45,24 +44,20 @@ trait FillsContent
 
     /**
      * Add a dependency.
-     *
-     * @param  string  $dependency
-     * @return static
      */
     public function addDependency(string $dependency): static
     {
-        if (!isset($this->dependencies)) {
+        if (! isset($this->dependencies)) {
             $this->dependencies = collect();
         }
 
         $this->dependencies->push($dependency);
+
         return $this;
     }
 
     /**
      * Set the content placeholder.
-     * 
-     * @param  array|string  $contentPlaceholder
      */
     public function setContentPlaceholder(array|string $contentPlaceholder): void
     {
@@ -71,8 +66,6 @@ trait FillsContent
 
     /**
      * Set the dependency placeholder.
-     * 
-     * @param  array|string  $dependencyPlaceholder
      */
     public function setDependencyPlaceholder(array|string $dependencyPlaceholder): void
     {

@@ -40,7 +40,7 @@ trait InteractsWithFiles
         $filesystem = app(Filesystem::class);
 
         if (! $this->fileExists($stubPath = base_path("stubs/{$stub}.stub"))) {
-            $stubPath = $this->getDefaultStubPath() . "/{$stub}.stub";
+            $stubPath = $this->getDefaultStubPath()."/{$stub}.stub";
         }
 
         $stub = str($filesystem->get($stubPath));

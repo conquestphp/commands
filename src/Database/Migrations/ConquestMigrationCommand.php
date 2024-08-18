@@ -5,36 +5,32 @@ declare(strict_types=1);
 namespace Conquest\Command\Database\Migrations;
 
 use Conquest\Command\Concerns\HasSchemaColumns;
-use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use Conquest\Command\Enums\SchemaColumn;
-use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Illuminate\Contracts\Console\PromptsForMissingInput;
-use Conquest\Command\Database\Migrations\ConquestMigrationCreator;
-use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\multiselect;
-use function Laravel\Prompts\text;
 
 #[AsCommand(name: 'conquest:migration', description: 'Create a new migration file.')]
 class ConquestMigrationCommand extends Command implements PromptsForMissingInput
 {
     use HasSchemaColumns;
-    /**
-     * Required base column for the schema.
-     * 
-     * @var string
-     */
-    protected $id = "\$table->id();";
 
     /**
-    * The migration creator instance.
-    *
-    * @var \Illuminate\Database\Migrations\ConquestMigrationCreator
-    */
+     * Required base column for the schema.
+     *
+     * @var string
+     */
+    protected $id = '$table->id();';
+
+    /**
+     * The migration creator instance.
+     *
+     * @var \Illuminate\Database\Migrations\ConquestMigrationCreator
+     */
     protected $creator;
 
     /**
@@ -56,7 +52,7 @@ class ConquestMigrationCommand extends Command implements PromptsForMissingInput
             $this->getFileName(), base_path('migrations'), $this->getClassName(), true
         );
 
-        $this->components->info(sprintf('Migration [%s] created successfully.', $file));    
+        $this->components->info(sprintf('Migration [%s] created successfully.', $file));
     }
 
     protected function getColumns()
@@ -64,11 +60,11 @@ class ConquestMigrationCommand extends Command implements PromptsForMissingInput
         if (! $this->option('columns')) {
             return $this->id;
         }
-            
+
         return str($this->getSchemaColumns()
-                ->map(fn (array $column) => "\t\t\t" . $column[0]->blueprint($column[1]))
-                ->implode("\n")
-            )->prepend($this->id . "\n")
+            ->map(fn (array $column) => "\t\t\t".$column[0]->blueprint($column[1]))
+            ->implode("\n")
+        )->prepend($this->id."\n")
             ->value();
     }
 
@@ -100,12 +96,11 @@ class ConquestMigrationCommand extends Command implements PromptsForMissingInput
         return $name;
     }
 
-
     protected function getArguments()
     {
         return [
             ['name', InputArgument::REQUIRED, 'The name of the migration.'],
-        ];            
+        ];
     }
 
     protected function getOptions()
@@ -127,7 +122,7 @@ class ConquestMigrationCommand extends Command implements PromptsForMissingInput
         ];
     }
 
-        /**
+    /**
      * Interact further with the user if they were prompted for missing arguments.
      *
      * @return void
@@ -143,5 +138,4 @@ class ConquestMigrationCommand extends Command implements PromptsForMissingInput
         $input->setOption('columns', $columns);
         $this->confirmedDuringPrompting = true;
     }
-
 }

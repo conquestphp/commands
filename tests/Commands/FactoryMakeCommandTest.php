@@ -27,7 +27,7 @@ it('can create a conquest factory which is default migration', function () {
 it('can create a conquest factory with columns', function () {
     Artisan::call('make:conquest-factory', [
         'name' => $m = 'ExampleVersion',
-        '--columns' => 'name,user_id,quantity'
+        '--columns' => 'name,user_id,quantity',
     ]);
 
     $files = File::files($this->factories);

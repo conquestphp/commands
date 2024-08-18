@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace Conquest\Command\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Stringable;
 use Conquest\Command\Concerns\CanIndentStrings;
 use Conquest\Command\Concerns\InteractsWithFiles;
-use Symfony\Component\Console\Input\InputArgument;
-use Conquest\Command\Contracts\GeneratesBoilerplate;
 use Conquest\Command\Concerns\InteractsWithMigrations;
+use Conquest\Command\Contracts\GeneratesBoilerplate;
+use Illuminate\Console\Command;
+use Illuminate\Support\Stringable;
+use Symfony\Component\Console\Input\InputArgument;
 
 abstract class MakeBoilerplateCommand extends Command implements GeneratesBoilerplate
 {
+    use CanIndentStrings;
     use InteractsWithFiles;
     use InteractsWithMigrations;
-    use CanIndentStrings;
 
     /**
      * The type of class being generated.
-     * 
+     *
      * @var string
      */
     protected $type;
-    
+
     protected function getArguments(): array
     {
         return [
@@ -54,7 +54,7 @@ abstract class MakeBoilerplateCommand extends Command implements GeneratesBoiler
     {
         return str($path)
             ->rtrim('/')
-            
+
             ->append(str($file)
                 ->ltrim('/')
                 ->prepend('/')

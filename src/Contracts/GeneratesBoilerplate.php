@@ -16,35 +16,23 @@ interface GeneratesBoilerplate extends PromptsForMissingInput
      */
     public function handle(): int;
 
-
     /**
      * Get the formatted name argument.
-     * 
-     * @return Stringable
      */
     public function getInputName(): Stringable;
 
     /**
      * Get the path to write the file to.
-     * 
-     * @return string
      */
     public function getWritePath(): string;
 
     /**
      * Get the file extension.
-     * 
-     * @return string
      */
     public function getFileExtension(): string;
 
     /**
      * Get the full path to the file.
-     * 
-     * @param  string  $path
-     * @param  string  $file
-     * @return string
      */
     public function getFilePath(string $path, string $file): string;
 }
-

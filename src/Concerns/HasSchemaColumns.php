@@ -4,6 +4,7 @@ namespace Conquest\Command\Concerns;
 
 use Conquest\Command\Enums\SchemaColumn;
 use Illuminate\Support\Collection;
+
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\text;
@@ -12,7 +13,7 @@ trait HasSchemaColumns
 {
     /**
      * Whether the user has confirmed undefined columns during prompting.
-     * 
+     *
      * @var bool
      */
     protected $confirmedDuringPrompting = false;
@@ -20,7 +21,7 @@ trait HasSchemaColumns
     /**
      * Get the schema for a given column.
      *
-     * @param string $column The column name to get the schema for.
+     * @param  string  $column  The column name to get the schema for.
      * @return null|array{0: SchemaColumn, 1: string} An array containing the SchemaColumn enum and the original column name.
      */
     protected function getSchemaColumn(string $column): ?array
@@ -52,13 +53,13 @@ trait HasSchemaColumns
     protected function promptForSchemaColumns(): string
     {
         $columns = collect();
-        collect(multiselect('Select which columns you would like to include?.', 
+        collect(multiselect('Select which columns you would like to include?.',
             collect(SchemaColumn::cases())
-                ->filter(fn (SchemaColumn $column) => !$column->coalesced())
+                ->filter(fn (SchemaColumn $column) => ! $column->coalesced())
                 ->mapWithKeys(fn (SchemaColumn $column) => [$column->value => $column->name])
                 ->toArray()
         ))->each(fn ($option) => $columns->push($option));
-        
+
         if ($columns->contains(SchemaColumn::ForeignId->value)) {
             $columns = $columns->reject(fn ($column) => $column === SchemaColumn::ForeignId->value);
 
@@ -66,10 +67,10 @@ trait HasSchemaColumns
                 $value = text('What is the foreign key column?', 'user_id');
                 $columns->push($value);
 
-                if (empty($value) || !confirm('Do you want to add another foreign key column?')) {
+                if (empty($value) || ! confirm('Do you want to add another foreign key column?')) {
                     break;
                 }
-            }                    
+            }
         }
 
         if ($columns->contains(SchemaColumn::Undefined->value)) {
@@ -78,15 +79,12 @@ trait HasSchemaColumns
                 $value = text('What is the column name?', 'custom');
                 $columns->push($value);
 
-                if (empty($value) || !confirm('Do you want to add another column?')) {
+                if (empty($value) || ! confirm('Do you want to add another column?')) {
                     break;
                 }
-            }                    
+            }
         }
 
         return $columns->unique()->implode(',');
     }
-
-
-
 }

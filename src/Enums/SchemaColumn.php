@@ -46,8 +46,8 @@ enum SchemaColumn: string
     case CreatedBy = 'created_by';
     case UpdatedBy = 'updated_by';
     case IpAddress = 'ip_address';
-    case Icon = 'icon';   
-    
+    case Icon = 'icon';
+
     /** Coalseced for consistency */
     case File = 'file';
     case Title = 'title';
@@ -123,11 +123,11 @@ enum SchemaColumn: string
             self::Color, self::Colour,
             self::Code,
             self::Path, self::File,
-            self::Phone, 
-            self::Address, 
-            self::City, 
-            self::State, 
-            self::Zip, 
+            self::Phone,
+            self::Address,
+            self::City,
+            self::State,
+            self::Zip,
             self::Country,
             self::Image,
             self::Icon, self::IpAddress => 255,
@@ -145,7 +145,7 @@ enum SchemaColumn: string
 
             self::Price,
             self::Duration,
-            self::Minutes => 4294967295, 
+            self::Minutes => 4294967295,
             default => 0,
         };
     }
@@ -196,8 +196,8 @@ enum SchemaColumn: string
     public function hidden(): bool
     {
         return match ($this) {
-            self::ForeignId, 
-            self::CreatedBy, 
+            self::ForeignId,
+            self::CreatedBy,
             self::UpdatedBy,
             self::Password,
             self::Token => true,
@@ -268,9 +268,9 @@ enum SchemaColumn: string
     public static function tryWithPatterns(string $name): ?SchemaColumn
     {
         return match (true) {
-            str($name)->endsWith('_id') => static::ForeignId,
-            str($name)->startsWith('is_') => static::IsBoolean,
-            default => static::tryFrom($name) ?? static::Undefined,
+            str($name)->endsWith('_id') => self::ForeignId,
+            str($name)->startsWith('is_') => self::IsBoolean,
+            default => self::tryFrom($name) ?? self::Undefined,
         };
     }
 
@@ -298,22 +298,22 @@ enum SchemaColumn: string
         };
     }
 
-    public function relationship(string $name, string $table = null): ?string
+    public function relationship(string $name, ?string $table = null): ?string
     {
-        if (!$this->hasRelationship()) {
+        if (! $this->hasRelationship()) {
             return null;
         }
 
         $model = str($name)->replace('*_id', '')->lower()->value();
 
         $signature = match (true) {
-            !!$table => str($table)->plural()->camel()->value(),
+            (bool) $table => str($table)->plural()->camel()->value(),
             $model === SchemaColumn::CreatedBy->value => 'creator',
             $model === SchemaColumn::UpdatedBy->value => 'updater',
             default => str($model)->singular()->camel()->value()
         };
 
-        $method = !!$table ? 'hasMany' : 'belongsTo';
+        $method = (bool) $table ? 'hasMany' : 'belongsTo';
 
         return sprintf(
             'public function %s()

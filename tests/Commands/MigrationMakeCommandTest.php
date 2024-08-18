@@ -30,7 +30,7 @@ it('can create a conquest migration which is default migration', function () {
 it('can create a conquest migration with attributes', function () {
     Artisan::call('conquest:migration', [
         'name' => $m = 'ExampleVersion',
-        '--columns' => 'name,user_id,quantity'
+        '--columns' => 'name,user_id,quantity',
     ]);
 
     $files = File::files($this->migrations);
@@ -40,5 +40,5 @@ it('can create a conquest migration with attributes', function () {
     expect($file)->getContents()
         ->toContain(str($m)->snake())
         ->toContain(SchemaColumn::Name->blueprint('name'))
-        ->toContain(SchemaColumn::ForeignId->blueprint('user_id'));    
+        ->toContain(SchemaColumn::ForeignId->blueprint('user_id'));
 });

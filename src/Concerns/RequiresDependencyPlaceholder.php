@@ -29,9 +29,6 @@ trait RequiresDependencyPlaceholder
 
     /**
      * Set the placeholder to use to replace as dependency placeholder
-     * 
-     * @param string|array $dependencyPlaceholder
-     * @return void
      */
     public function setDependencyPlaceholder(string|array $dependencyPlaceholder): void
     {

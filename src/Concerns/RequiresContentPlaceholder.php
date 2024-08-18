@@ -29,9 +29,6 @@ trait RequiresContentPlaceholder
 
     /**
      * Set the placeholder to use to replace as content placeholder
-     * 
-     * @param string|array $contentPlaceholder
-     * @return void
      */
     public function setContentPlaceholder(string|array $contentPlaceholder): void
     {

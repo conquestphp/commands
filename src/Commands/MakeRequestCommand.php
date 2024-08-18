@@ -22,6 +22,7 @@ class MakeRequestCommand extends MakeBoilerplateCommand
     
     public function handle(): int
     {
+        $name = $this->getInputName();
         if (blank($this->argument('method')) && !confirm('You have not provided a method name, would you like to proceed?')) {
             return self::SUCCESS;
         }
@@ -38,12 +39,12 @@ class MakeRequestCommand extends MakeBoilerplateCommand
             return static::INVALID;
         }
 
-        spin(static fn () => $this->copyStubToApp('conquest.request', $path, [
+        $this->copyStubToApp('conquest.request', $path, [
             'namespace' => $namespace,
             'class' => $class,
             'authorization' => $this->getAuthorization(),
             'rules' => $this->getRules()
-        ]));
+        ]);
 
         if (windows_os()) {
             $path = str_replace('/', '\\', $path);
@@ -59,7 +60,7 @@ class MakeRequestCommand extends MakeBoilerplateCommand
     {
         return [
             ['force', null, InputOption::VALUE_NONE, 'Create the request even if it already exists'],
-            ['gate', 'g', InputOption::VALUE_NONE, 'Resolve a policy for the request, using the root of the class name'],
+            ['authorize', 'a', InputOption::VALUE_NONE, 'Resolve a policy for the request, using the root of the class name'],
             ['columns', 'c', InputOption::VALUE_REQUIRED, 'Generate rules for the request using the property list'],
             ['suppress', 's', InputOption::VALUE_NONE, 'Suppress the creation of the request'],
         ];
@@ -84,7 +85,7 @@ class MakeRequestCommand extends MakeBoilerplateCommand
 
     private function getAuthorization(): string
     {
-        if (!$this->option('gate')) {
+        if (!$this->option('authorize')) {
             return 'true';
         }
 
@@ -93,7 +94,7 @@ class MakeRequestCommand extends MakeBoilerplateCommand
 
     private function getRules(): string
     {
-        if (!$this->option('properties')) {
+        if (!$this->option('columns')) {
             return '//';
         }
 

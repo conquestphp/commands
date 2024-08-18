@@ -12,7 +12,7 @@ class TestCase extends Orchestra
     {
         parent::setUp();
 
-        // $this->loadLaravelMigrations(['--database' => 'testing']);
+        $this->loadLaravelMigrations(['--database' => 'testing']);
     }
 
     protected function getPackageProviders($app)

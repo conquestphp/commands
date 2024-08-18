@@ -33,7 +33,6 @@ it('can create a conquest factory with columns', function () {
     $files = File::files($this->factories);
     $file = collect($files)->first(fn ($file) => str($file->getFilename())->startsWith($m));
     expect($file)->not->toBeNull();
-    dd($file->getContents());
     expect($file->getContents())
         ->toContain($m.'Factory')
         ->toContain(SchemaColumn::Name->factory('name'))

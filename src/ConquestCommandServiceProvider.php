@@ -9,7 +9,7 @@ use Conquest\Command\Commands\UserMakeCommand;
 use Conquest\Command\Commands\ModalMakeCommand;
 use Conquest\Command\Commands\ConquestMakeCommand;
 use Conquest\Command\Commands\ComponentMakeCommand;
-use Conquest\Command\Database\Migrations\ConquestMigrationMakeCommand;
+use Conquest\Command\Database\Migrations\ConquestMigrationCommand;
 
 class ConquestCommandServiceProvider extends ServiceProvider
 {
@@ -28,7 +28,7 @@ class ConquestCommandServiceProvider extends ServiceProvider
                 ComponentMakeCommand::class,
                 RouteAddCommand::class,
                 UserMakeCommand::class,
-                ConquestMigrationMakeCommand::class,
+                ConquestMigrationCommand::class,
             ]);
         }
     }

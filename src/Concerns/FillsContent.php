@@ -36,8 +36,7 @@ trait FillsContent
      */
     public function getDependencies(): string
     {
-        return collect($this->defaultDependencies ?? [])
-            ->merge($this->dependencies ?? collect())
+        return collect($this->dependencies ?? [])
             ->unique()
             ->sort()
             ->map(fn ($dependency) => "use $dependency;")

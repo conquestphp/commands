@@ -19,7 +19,7 @@ use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\text;
 
 #[AsCommand(name: 'conquest:migration', description: 'Create a new migration file.')]
-class ConquestMigrationMakeCommand extends Command implements PromptsForMissingInput
+class ConquestMigrationCommand extends Command implements PromptsForMissingInput
 {
     /**
      * Whether the user has confirmed undefined columns during prompting.
@@ -85,32 +85,23 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
      * Get the schema for a given column.
      *
      * @param string $column The column name to get the schema for.
-     * @return array{0: SchemaColumn, 1: string} An array containing the SchemaColumn enum and the original column name.
+     * @return null|array{0: SchemaColumn, 1: string} An array containing the SchemaColumn enum and the original column name.
      */
-    protected function getSchema(string $column): array
+    protected function getSchema(string $column): ?array
     {
         $schema = SchemaColumn::tryWithPatterns($column);
 
-        if ($coalesced = $schema->coalesced()) {
+        if ($this->option('suppress')) {
+            // Do nothing
+        } elseif ($coalesced = $schema->coalesced()) {
             $this->components->warn(sprintf('Column [%s] will be coalesced to [%s].', $column, $coalesced));
         } elseif ($schema->isUndefined() && ! $this->confirmedDuringPrompting) {
-            $confirmed = confirm(sprintf('Column [%s] is not a predefined column. Do you want to include it anyway?', $column));
-            if (! $confirmed) {
+            if (! confirm(sprintf('Column [%s] is not a predefined column. Do you want to include it anyway?', $column))) {
                 return null;
             }
         }
 
         return [$schema, $column];
-    }
-
-    // protected function getStubPath()
-    // {
-    //     return __DIR__.'/stubs/migration.stub';
-    // }
-
-    protected function getPath()
-    {
-        return database_path('migrations');
     }
 
     protected function getClassName(): string
@@ -152,8 +143,9 @@ class ConquestMigrationMakeCommand extends Command implements PromptsForMissingI
     protected function getOptions()
     {
         return [
-            ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the migration even if it already exists'],
-            ['columns', 'a', InputOption::VALUE_REQUIRED, 'The columns of the migration'],
+            ['force', 'f', InputOption::VALUE_NONE, 'Overwrite the migration even if it already exists.'],
+            ['columns', 'c', InputOption::VALUE_REQUIRED, 'The columns of the migration.'],
+            ['suppress', 's', InputOption::VALUE_NONE, 'Suppress the confirmation prompts.'],
         ];
     }
 

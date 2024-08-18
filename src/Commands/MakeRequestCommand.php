@@ -19,21 +19,16 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Conquest\Command\Concerns\InteractsWithMigrations;
 
 #[AsCommand(name: 'make:conquest-request', description: 'Create a new form request class with Conquest')]
-class MakeRequestCommand extends Command implements GeneratesBoilerplate
+class MakeRequestCommand extends MakeBoilerplateCommand
 {
-    use InteractsWithFiles;
-    use InteractsWithMigrations;
-    use CanIndentStrings;
 
-    /**
-     * The type of class being generated.
-     * 
-     * @var string
-     */
     protected $type = 'Request';
     
     public function handle(): int
     {
+        // if (! $this->option('force') && $this->checkForCollision($file)) {
+        //     return static::INVALID;
+        // }
         // $model = (string) str($this->argument('name') ?? text(
         //     label: 'What is the model name?',
         //     placeholder: 'BlogPost',
@@ -70,58 +65,30 @@ class MakeRequestCommand extends Command implements GeneratesBoilerplate
 
 
         // $this->components->info("Filament resource [{$resourcePath}] created successfully.");
-
-        dd($this->getWritePath(), $this->getInputName()->value());
+        $request = $this->getInputName()->value() . $this->type;
+        $path = $this->getFilePath($this->getWritePath(), $request . $this->getFileExtension());
+        $namespace = $this->getInputName()->replace('/', '\\')
+            ->prepend('App\\Http\\Requests\\')
+            ->beforeLast('\\')
+            ->value();
+        dd($namespace);
         return self::SUCCESS;
     }
 
-    public function getArguments(): array
-    {
-        return [
-            ['name', InputArgument::REQUIRED, 'The name of the request to generate.'],
-            ['method', InputArgument::OPTIONAL, 'The method of the request to generate.'],
-        ];
-    }
-
-    public function getOptions(): array
+    protected function getOptions(): array
     {
         return [
             ['force', null, InputOption::VALUE_NONE, 'Create the request even if it already exists'],
+            ['gate', 'g', InputOption::VALUE_NONE, 'Resolve a policy for the request, or use a gate based on the name'],
+            ['property', 'p', InputOption::VALUE_REQUIRED, 'Generate rules for the request using the property list'],
         ];
-    }
-
-    public function getInputName(): Stringable
-    {
-        return str($this->argument('name'))
-            ->beforeLast('.php')
-            ->trim('/')
-            ->trim('\\')
-            ->trim(' ')
-            ->studly()
-            ->replaceLast($this->type, '')
-            ->replace('/', '\\');
     }
 
     public function getWritePath(): string
     {
         return app_path('Http/Requests');
     }
-
-    public function getFileExtension(): string
-    {
-        return '.php';
-    }
-
-    protected function promptForMissingArgumentsUsing()
-    {
-        return [
-            'name' => [
-                sprintf('What should the %s be named?', strtolower($this->type)),
-                'E.g. UserIndexRequest',
-            ],
-        ];
-    }
-
+    
     protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
     {
         if ($this->didReceiveOptions($input)) {

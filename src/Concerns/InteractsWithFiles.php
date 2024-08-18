@@ -10,10 +10,11 @@ use function Laravel\Prompts\confirm;
 trait InteractsWithFiles
 {
     /**
-     * @param  array<string>  $paths
+     * @param  array<string>|string  $paths
      */
-    protected function checkForCollision(array $paths): bool
+    protected function checkForCollision(array|string $paths): bool
     {
+        $paths = is_string($paths) ? [$paths] : $paths;
         foreach ($paths as $path) {
             if (! $this->fileExists($path)) {
                 continue;

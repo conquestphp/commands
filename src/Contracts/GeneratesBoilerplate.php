@@ -16,19 +16,6 @@ interface GeneratesBoilerplate extends PromptsForMissingInput
      */
     public function handle(): int;
 
-    /**
-     * Get the console command arguments.
-     *
-     * @return array
-     */
-    public function getArguments(): array;
-
-    /**
-     * Get the console command options.
-     *
-     * @return array
-     */
-    public function getOptions(): array;
 
     /**
      * Get the formatted name argument.
@@ -50,5 +37,14 @@ interface GeneratesBoilerplate extends PromptsForMissingInput
      * @return string
      */
     public function getFileExtension(): string;
+
+    /**
+     * Get the full path to the file.
+     * 
+     * @param  string  $path
+     * @param  string  $file
+     * @return string
+     */
+    public function getFilePath(string $path, string $file): string;
 }
 

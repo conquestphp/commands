@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Conquest\Command\Database\Migrations;
 
+use Conquest\Command\Concerns\HasSchemaColumns;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use Conquest\Command\Enums\SchemaColumn;
@@ -21,13 +22,7 @@ use function Laravel\Prompts\text;
 #[AsCommand(name: 'conquest:migration', description: 'Create a new migration file.')]
 class ConquestMigrationCommand extends Command implements PromptsForMissingInput
 {
-    /**
-     * Whether the user has confirmed undefined columns during prompting.
-     * 
-     * @var bool
-     */
-    protected $confirmedDuringPrompting = false;
-
+    use HasSchemaColumns;
     /**
      * Required base column for the schema.
      * 
@@ -70,38 +65,11 @@ class ConquestMigrationCommand extends Command implements PromptsForMissingInput
             return $this->id;
         }
             
-        return str(str($this->option('columns'))->explode(',')
-            ->map(fn ($column) => trim($column))
-            ->map(fn ($column) => $this->getSchema($column))
-            ->filter(fn ($column) => $column !== null)
-            ->sortByDesc(fn (array $column) => $column[0]->precedence())
-            ->map(fn (array $column) => "\t\t\t" . $column[0]->blueprint($column[1]))
-            ->implode("\n"))
-            ->prepend($this->id . "\n")
+        return str($this->getSchemaColumns()
+                ->map(fn (array $column) => "\t\t\t" . $column[0]->blueprint($column[1]))
+                ->implode("\n")
+            )->prepend($this->id . "\n")
             ->value();
-    }
-
-    /**
-     * Get the schema for a given column.
-     *
-     * @param string $column The column name to get the schema for.
-     * @return null|array{0: SchemaColumn, 1: string} An array containing the SchemaColumn enum and the original column name.
-     */
-    protected function getSchema(string $column): ?array
-    {
-        $schema = SchemaColumn::tryWithPatterns($column);
-
-        if ($this->option('suppress')) {
-            // Do nothing
-        } elseif ($coalesced = $schema->coalesced()) {
-            $this->components->warn(sprintf('Column [%s] will be coalesced to [%s].', $column, $coalesced));
-        } elseif ($schema->isUndefined() && ! $this->confirmedDuringPrompting) {
-            if (! confirm(sprintf('Column [%s] is not a predefined column. Do you want to include it anyway?', $column))) {
-                return null;
-            }
-        }
-
-        return [$schema, $column];
     }
 
     protected function getClassName(): string
@@ -170,41 +138,10 @@ class ConquestMigrationCommand extends Command implements PromptsForMissingInput
             return;
         }
 
-        $columns = collect();
-        collect(multiselect('Select which columns you would like to include?.', 
-            collect(SchemaColumn::cases())
-                ->filter(fn (SchemaColumn $column) => !$column->coalesced())
-                ->mapWithKeys(fn (SchemaColumn $column) => [$column->value => $column->name])
-                ->toArray()
-        ))->each(fn ($option) => $columns->push($option));
-        
-        if ($columns->contains(SchemaColumn::ForeignId->value)) {
-            $columns = $columns->reject(fn ($column) => $column === SchemaColumn::ForeignId->value);
+        $columns = $this->promptForSchemaColumns();
 
-            while (true) {
-                $value = text('What is the foreign key column?', 'user_id');
-                $columns->push($value);
-
-                if (empty($value) || !confirm('Do you want to add another foreign key column?')) {
-                    break;
-                }
-            }                    
-        }
-
-        if ($columns->contains(SchemaColumn::Undefined->value)) {
-            $columns = $columns->reject(fn ($column) => $column === SchemaColumn::Undefined->value);
-            while (true) {
-                $value = text('What is the column name?', 'custom');
-                $columns->push($value);
-
-                if (empty($value) || !confirm('Do you want to add another column?')) {
-                    break;
-                }
-            }                    
-        }
-
+        $input->setOption('columns', $columns);
         $this->confirmedDuringPrompting = true;
-        $input->setOption('columns', $columns->unique()->implode(','));
     }
 
 }

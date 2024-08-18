@@ -9,7 +9,7 @@ trait RequiresContentPlaceholder
     /**
      * @var array|string The content placeholder of the stub.
      */
-    protected $contentPlaceholder;
+    // protected $contentPlaceholder;
 
     /**
      * Retrieve the content placeholder property

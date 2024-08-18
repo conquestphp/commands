@@ -1,8 +1,9 @@
 <?php
 
-namespace Illuminate\Database\Console\Factories;
+namespace Conquest\Command\Commands;
 
 use Conquest\Command\Concerns\FillsContent;
+use Conquest\Command\Concerns\HasSchemaColumns;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Illuminate\Database\Console\Factories\FactoryMakeCommand as IlluminateFactoryMakeCommand;
@@ -11,6 +12,7 @@ use Illuminate\Database\Console\Factories\FactoryMakeCommand as IlluminateFactor
 class FactoryMakeCommand extends IlluminateFactoryMakeCommand
 {
     use FillsContent;
+    use HasSchemaColumns;
 
     /**
      * The console command name.
@@ -29,7 +31,8 @@ class FactoryMakeCommand extends IlluminateFactoryMakeCommand
      */
     protected function buildClass($name)
     {
-        return $this->fillContent(parent::buildClass($name));
+        $stub = parent::buildClass($name);
+        return $this->fillContent($stub);
     }
 
     /**
@@ -45,45 +48,16 @@ class FactoryMakeCommand extends IlluminateFactoryMakeCommand
         ]);
     }
 
-    /**
-     * Get the schema for a given column.
-     *
-     * @param string $column The column name to get the schema for.
-     * @return null|array{0: SchemaColumn, 1: string} An array containing the SchemaColumn enum and the original column name.
-     */
-    protected function getSchema(string $column): ?array
-    {
-        $schema = SchemaColumn::tryWithPatterns($column);
-
-        if ($this->option('suppress')) {
-            // Do nothing
-        } elseif ($coalesced = $schema->coalesced()) {
-            $this->components->warn(sprintf('Column [%s] will be coalesced to [%s].', $column, $coalesced));
-        } elseif ($schema->isUndefined() && ! $this->confirmedDuringPrompting) {
-            if (! confirm(sprintf('Column [%s] is not a predefined column. Do you want to include it anyway?', $column))) {
-                return null;
-            }
-        }
-
-        return [$schema, $column];
-    }
-
     public function getContent(): string
     {
         if (!$this->option('columns')) {
             return '//';
         }
 
-        return str(str($this->option('columns'))
-            ->trim()
-            ->explode(',')
-            ->map(fn ($column) => trim($column))
-            ->map(fn ($column) => $this->getSchema($column))
-            ->filter(fn ($column) => $column !== null)
-            ->sortByDesc(fn (array $column) => $column[0]->precedence())
-            ->map(fn (array $column) => "\t\t\t" . $column[0]->blueprint($column[1]))
-            ->implode("\n"))
-            ->prepend($this->id . "\n")
+        return str($this->getSchemaColumns()
+                ->map(fn (array $column) => sprintf('\'%s\' => %s', $column[1], $column[0]->factory($column[1])))
+                ->implode("\n\t\t\t")
+            )
             ->value();
     }
 }

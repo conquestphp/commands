@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Prompts\Concerns;
+namespace Conquest\Command\Concerns;
 
 use Illuminate\Filesystem\Filesystem;
 use ReflectionClass;
@@ -19,7 +19,7 @@ trait InteractsWithFiles
                 continue;
             }
 
-            if (! confirm(basename($path) . ' already exists, do you want to overwrite it?')) {
+            if (! confirm(sprintf('[%s] already exists, do you want to overwrite it?', basename($path)))) {
                 $this->components->error("{$path} already exists, aborting.");
 
                 return true;
@@ -38,14 +38,14 @@ trait InteractsWithFiles
     {
         $filesystem = app(Filesystem::class);
 
-        if (! $this->fileExists($stubPath = base_path("stubs/filament/{$stub}.stub"))) {
+        if (! $this->fileExists($stubPath = base_path("stubs/{$stub}.stub"))) {
             $stubPath = $this->getDefaultStubPath() . "/{$stub}.stub";
         }
 
         $stub = str($filesystem->get($stubPath));
 
         foreach ($replacements as $key => $replacement) {
-            $stub = $stub->replace("{{ {$key} }}", $replacement);
+            $stub = $stub->replace(["{{ {$key} }}", "{{{$key}}}"], $replacement);
         }
 
         $stub = (string) $stub;

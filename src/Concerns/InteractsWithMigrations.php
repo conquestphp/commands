@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionException;
 
-trait CanReadModelSchemas
+trait InteractsWithMigrations
 {
     protected function getModel(string $model): ?string
     {
